@@ -11,7 +11,6 @@ sys.path.append('..')
 sys.path.append('.')
 import settings
 from api import vp_api
-from funnel import funnel_api
 
 def create_app():
 
