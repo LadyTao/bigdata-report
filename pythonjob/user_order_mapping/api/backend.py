@@ -16,7 +16,6 @@ def create_app():
 
     app = Flask(__name__)
     app.register_blueprint(vp_api)
-    app.register_blueprint(funnel_api)
 
     cors = CORS(app)
     sess = Session()
