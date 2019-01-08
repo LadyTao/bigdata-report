@@ -13,7 +13,7 @@ pip install -r requirements.txt
 
 ## Config
 
-modify ettings.sample.py and save as ettings.py
+modify ettings.sample.py and save as settings.py
 
 ## Execute
 
