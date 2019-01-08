@@ -30,9 +30,9 @@ def gen_request(conditions):
 	    },
             "sort": [{"_id": {"order":"desc"}}, "uid"]
     }
+    page_size = conditions.get("size", 20)
     start = (page_size)* (conditions['page']-1) if 'page' in conditions else 0
     start = 0 if start < 0 else start
-    page_size = conditions.get("size", 20)
     order_only = True if 'order_only' in conditions else False
         
     should, must = [], []
@@ -151,7 +151,7 @@ def order2user():
     conditions = json.loads(q)
     q, start, order_only, page_size = gen_request(conditions)
     es_query = make_query(start, page_size, q)
-    if 'hits' not in response:
+    if 'hits' not in es_query:
         return "error"
     #total = response['hits']['total']
     total_hit = es_query['aggregations']['distinct_uid']['value']
