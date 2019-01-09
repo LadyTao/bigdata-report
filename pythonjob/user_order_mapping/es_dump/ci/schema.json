@@ -1,0 +1,54 @@
+{
+  "settings": {
+    "number_of_replicas": 1,
+    "index.mapping.ignore_malformed": false
+  },
+  "mappings": {
+    "orders": {
+      "_all": {
+        "enabled": false
+      },
+      "dynamic": "false",
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "uid": {
+          "type": "keyword"
+        },
+        "productline": {
+          "type": "keyword"
+        },
+        "channel": {
+          "type": "keyword"
+        },
+        "os_platform": {
+          "type": "keyword"
+        },
+        "payment_pattern": {
+          "type": "keyword"
+        },
+        "subcribe_type": {
+          "type": "keyword"
+        },
+        "amount": {
+          "type": "float"
+        },
+        "origin_amount": {
+          "type": "float"
+        },
+        "order_no": {
+          "type": "integer"
+        },
+        "member_class": {
+          "type": "keyword"
+        },
+        "inputtime": {
+          "type": "date",
+          "format": "date_optional_time"
+        }
+        
+      }
+    }
+  }
+}
