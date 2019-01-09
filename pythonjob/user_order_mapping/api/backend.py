@@ -11,11 +11,15 @@ sys.path.append('..')
 sys.path.append('.')
 import settings
 from api.filmora.api import vp_api
+from api.filmora.funnel import funnel_api
+from api.ci.option import ci_options
 
 def create_app():
 
     app = Flask(__name__)
     app.register_blueprint(vp_api)
+    app.register_blueprint(funnel_api)
+    app.register_blueprint(ci_options)
 
     cors = CORS(app)
     sess = Session()
