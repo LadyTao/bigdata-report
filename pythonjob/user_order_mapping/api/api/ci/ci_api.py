@@ -11,6 +11,7 @@ import settings
 import json
 from elasticsearch import Elasticsearch
 from flask import Blueprint, render_template
+from flasgger import swag_from
 
 ci_api = Blueprint('ci_api', __name__)
 es_host = settings.es_host
@@ -50,8 +51,11 @@ def parse_query_obj(q_obj):
     q_obj['dim'] = q_obj.get("dim", "productline")
     q_obj['intv'] = q_obj.get("intv", "1d")
     q_obj['condition'] = q_obj.get("condition", None)
-    q_obj['page'] = q_obj.get("page", 1)
-    q_obj['size'] = q_obj.get("size", 20)
+    print(q_obj['condition'])
+    if q_obj['condition'] is not None:
+        q_obj['condition'] = json.loads(q_obj['condition'])
+    q_obj['page'] = int(q_obj.get("page", '1'))
+    q_obj['size'] = int(q_obj.get("size", '20'))
     return q_obj
 
 def make_es_query_obj(template_source, q_obj):
@@ -68,6 +72,8 @@ def make_es_query_obj(template_source, q_obj):
                                     .replace("__DIM__", q_obj['dim'])
 
     query_obj = json.loads(query_template)
+    if q_obj['dim'] == 'inputtime':
+        query_obj['aggs']['intv']['aggs'] = query_obj['aggs']['intv']['aggs']['dim']['aggs']
     #pp(query_obj)  
     if condition is not None:
         must, should = parse_condition(condition)
@@ -82,7 +88,7 @@ def make_es_query(es_query_obj):
     response = client.search(index='ci', search_type='dfs_query_then_fetch', sort="_id:desc", preference='_only_local',  body=es_query_obj)
     return response
 
-def process_aggs(aggs):
+def process_aggs(dim, aggs):
     '''
     input: complex es query result
     output:   
@@ -108,13 +114,32 @@ def process_aggs(aggs):
             'time': bucket['key_as_string'],
             'buckets': []
         }
+        if dim == 'inputtime':
+            """
+            dim_bucket_list = bucket['buckets']
+            data['buckets'].append({
+                  'dim': bucket['key_as_string'],
+		  'order_counts': sum([dom_bucket['doc_count'] for dom_bucket in dim_bucket_list]),
+                  'user_counts': sum([dom_bucket['UID']['value'] for dom_bucket in dim_bucket_list]),
+                  'amount': sum([round(dom_bucket['amount']['value'],2) for dom_bucket in dim_bucket_list])}
+            )
+            """
+            data['buckets'].append(
+                 {
+                   'dim': bucket['key_as_string'],
+                   'order_counts': bucket['doc_count'],
+                   'amount': round(bucket['amount']['value'], 2)
+                 }
+            )
+            output.append(data)
+            continue
         for dim in bucket['dim']['buckets']:
             data['buckets'].append(
                { 
                   'dim' : dim['key'],
                   'order_counts': dim['doc_count'],
                   'user_counts': dim['UID']['value'],
-                  'amount': dim['amount']['value']
+                  'amount': round(dim['amount']['value'], 2)
                }
             )
         output.append(data)
@@ -125,7 +150,7 @@ def query_date_histograms(q_obj):
     pp(es_query_obj)
     response = make_es_query(es_query_obj)
     aggs = response['aggregations']
-    response = process_aggs(aggs)
+    response = process_aggs(q_obj['dim'], aggs)
     return response
 
 def get_dim_statistics_list(response):
@@ -170,22 +195,29 @@ def get_dim_statistics_list(response):
         dim_matric_list.append(matrics_map)
     return dim_matric_list
 
-@ci_api.route("/ci_option", methods=['GET', 'POST'])
+@ci_api.route("/ci_sales_option", methods=['GET'])
+@swag_from('doc/ci_sales_option.yaml')
 def ci_option():
-    return jsonifyV(options)   
+    return jsonify(options)   
 
-@ci_api.route("/ci_sales_graph", methods=['GET', 'POST'])
+@ci_api.route("/ci_sales_graph", methods=['GET'])
+@swag_from('doc/ci_sales_graph.yaml')
 def ci_online_stats():
-    q = request.args.get("q")
-    q_obj = parse_query_obj(json.loads(q))
+    #q = request.args.get("q")
+    #q_obj = parse_query_obj(json.loads(q))
+    q_obj = request.args.to_dict()
+    q_obj = parse_query_obj(q_obj)
     
     response = query_date_histograms(q_obj)
     return jsonify(response)   
 
-@ci_api.route("/ci_sales_table", methods=['GET', 'POST'])
+@ci_api.route("/ci_sales_table", methods=['GET'])
+@swag_from('doc/ci_sales_table.yaml')
 def ci_sales_table():
-    q = request.args.get("q")
-    q_obj = parse_query_obj(json.loads(q))
+    #q = request.args.get("q")
+    #q_obj = parse_query_obj(json.loads(q))
+    q_obj = request.args.to_dict()
+    q_obj = parse_query_obj(q_obj)
     date_histograms = query_date_histograms(q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
     
@@ -197,10 +229,13 @@ def ci_sales_table():
     return jsonify(paged_list)
 
 
-@ci_api.route("/ci_sales_csv", methods=['GET', 'POST'])
+@ci_api.route("/ci_sales_csv", methods=['GET'])
+@swag_from('doc/ci_sales_csv.yaml')
 def ci_sales_csv():
-    q = request.args.get("q")
-    q_obj = parse_query_obj(json.loads(q))
+    #q = request.args.get("q")
+    #q_obj = parse_query_obj(json.loads(q))
+    q_obj = request.args.to_dict()
+    q_obj = parse_query_obj(q_obj)
     date_histograms = query_date_histograms(q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
     def dict_to_str(dim, dim_statistics_list):

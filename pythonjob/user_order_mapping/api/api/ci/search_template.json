@@ -1,0 +1,73 @@
+{
+   "aggs": {
+    "intv": {
+      "date_histogram": {
+        "field": "inputtime",
+        "interval": "__INTV__",
+        "time_zone": "Asia/Shanghai",
+        "min_doc_count": 1
+      },
+      "aggs": {
+        "dim": {
+          "terms": {
+            "field": "__DIM__",
+            "size": 1000,
+            "order": {
+              "_count": "desc"
+            }
+          }
+          ,"aggs": {
+            "amount": {
+              "sum": {
+                "field": "amount"
+              }
+            },"UID" : {
+                 "cardinality": {
+                    "field": "uid"
+                 } 
+             }
+          }
+        }
+      }
+    }
+  },
+  "size": 0,
+  "_source": {
+    "excludes": []
+  },
+  "stored_fields": [
+    "*"
+  ],
+  "script_fields": {},
+  "docvalue_fields": [
+    {
+      "field": "inputtime",
+      "format": "date_time"
+    }
+  ],
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "range": {
+            "inputtime": {
+              "gte": "__START__",
+              "lte": "__END__",
+              "format": "yyyy-MM-dd",
+              "time_zone": "+08:00"
+            }
+          }
+        }
+      ],
+      "filter": [
+        {
+          "match_all": {}
+        }
+      ],
+      "should": [],
+      "must_not": []
+    }
+  },
+  "from" : 0, "size" : 10
+
+}

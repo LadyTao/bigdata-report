@@ -1,0 +1,50 @@
+续费订单统计图数据接口
+传入查询条件，返回续费订单统计图数据所需数据
+---
+parameters:
+   - name: start
+     in: query 
+     type: string
+     default: "2019-01-01"
+     description: 查询开始时间
+     required: true
+   - name: end
+     in: query
+     type: string
+     default: "2019-01-31"
+     description: 查询结束时间
+     required: true
+   - name: channel
+     in: query
+     type: string
+     default: '百度推广,胡萝卜周,易企传'
+     required: true
+     description: 渠道
+   - name: expire_time_type
+     in: query
+     type: string
+     required: true
+     enum: ['月付', '年付']
+     default: '月付'
+     description: '订阅类型'
+   - name: intv
+     in: query
+     type: string
+     required: true
+     enum: [1d, 1w, 1M]
+     default: 1d
+     description: '数据聚合时间周期'
+   - name: same_type
+     in: query
+     type: string
+     required: true
+     enum: ['true', 'false']
+     default: 'false'
+     description: '会员续费率(true)、同类型续费率(false)'
+
+responses:
+   200:
+        description: 返回数据与时间Plot资讯Array
+
+
+
