@@ -28,7 +28,7 @@
         "payment_pattern": {
           "type": "keyword"
         },
-        "subcribe_type": {
+        "subscribe_type": {
           "type": "keyword"
         },
         "amount": {

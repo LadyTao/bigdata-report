@@ -108,12 +108,11 @@ def query_retention_data(q_obj):
         print(sql_query)
 
         cursor.execute(sql_query)
-        #result = src_cursor.fetchone()
         record_list = cursor.fetchall()
         
         for record in record_list:
             data = {
-               "time": record['stat_intv'], 
+               "time": record['stat_intv'].strftime('%Y-%m-%d') if q_obj['intv'] == '1d' else record['stat_intv'], 
                "buckets":[]} 
             # stat_inv, total_renew_user, ....
             dim_col_map = {
@@ -186,3 +185,98 @@ def ci_retention_csv():
             dim_statistics_str = ",".join([str(dim_statistics[key]) for key in key_list]) + "\n"
             yield dim_statistics_str
     return Response(dict_to_str(dim_statistics_list),  mimetype='text/csv')
+
+
+@renew_api.route("/ci_retention_pie_chart", methods=['GET'])
+@swag_from('doc/ci_retention_pie_chart.yaml')
+def ci_retention_piechart():
+    q_obj = request.args.to_dict()
+    q_obj = parse_query_obj(q_obj)
+   
+
+    ci_mysql = pymysql.connect(host=host, port=port, user=user, password=password, db=db, 
+                               charset='utf8mb4', cursorclass=pymysql.cursors.SSDictCursor)
+
+    result = []
+    with ci_mysql.cursor() as cursor:
+        sql  = """
+            select __INTV_FIELD__ as stat_intv,
+            renew_time_type, renew_user_level, sum(renew_user) as renew_user_counts
+	    from ci_member_renew_rate_day
+	    where channel in (__CHANNEL_LIST___) AND expire_time_type='__EXPIRE_TYPE__' 
+            AND stat_date>='__START__' AND stat_date<'__END__' 
+            AND renew_user > 0 
+            AND expire_user_level = '__USER_LEVEL__'  
+            __AND__SAME_TYPE__ group by stat_intv, renew_user_level, renew_time_type
+        """
+        #AND stat_intv = '__PIE_TIME__'
+
+        intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
+        channel_list_str = "'%s'"%("','").join(q_obj['channel'].split(","))
+        #expire_type = q_obj['expire_time_type']
+        #pie_time = record['stat_intv'].strftime('%Y-%m-%d') if q_obj['intv'] == '1d' else record['stat_intv'] 
+        and_same_type = ' AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if not q_obj['same_type'] else ''
+        sql_query = sql.replace("__INTV_FIELD__", intv_field)\
+                 .replace("__CHANNEL_LIST___", channel_list_str)\
+                 .replace("__EXPIRE_TYPE__", q_obj['expire_time_type'])\
+                 .replace("__AND__SAME_TYPE__", and_same_type)\
+                 .replace("__START__", q_obj['start'])\
+                 .replace("__END__", q_obj['end'])\
+                 .replace("__USER_LEVEL__", q_obj['expire_user_level'])\
+                 .replace("__PIE_TIME__", q_obj['pie_time'])
+        print(sql_query)
+        cursor.execute(sql_query)
+        #result = src_cursor.fetchone()
+        record_list = cursor.fetchall()
+        """
+            {
+		'renew_time_type': '月付',
+		'renew_user_counts': Decimal('2'),
+		'renew_user_level': 'VIP会员',
+		'stat_intv': datetime.date(2019, 1, 17),
+	    },
+	    {
+		'renew_time_type': '月付',
+		'renew_user_counts': Decimal('1'),
+		'renew_user_level': '高级会员',
+		'stat_intv': datetime.date(2019, 1, 17),
+	    },
+	    {
+		'renew_time_type': '月付',
+		'renew_user_counts': Decimal('1'),
+		'renew_user_level': 'VIP会员',
+		'stat_intv': datetime.date(2019, 1, 20),
+	    },
+        """
+        if q_obj['center'] == 'renew_time_type':
+            center_key, circle_key = 'renew_time_type', 'renew_user_level'
+        else:
+            center_key, circle_key = 'renew_user_level', 'renew_time_type'
+        base_map = {}  
+        total = 0
+        for record in record_list:
+            #pie_time = record['stat_intv'].strftime('%Y-%m-%d') if q_obj['intv'] == '1d' else record['stat_intv'] 
+            #if pie_time != q_obj['pie_time']:
+            #    print(pie_time, 'pass')
+            #    continue
+            #pie_user_type = record['stat_intv'].strftime('%Y-%m-%d') if q_obj['intv'] == '1d' else record['stat_intv'] 
+         
+            renew_user_counts = int(record['renew_user_counts'])
+            total += renew_user_counts
+            center_value, circle_value = record[center_key], record[circle_key]
+            print(record['renew_time_type'], record['renew_user_level'], record['renew_user_counts'], record['stat_intv'], total)
+            if center_value not in base_map:
+                base_map[center_value] = {'counts':0, 'title': center_value, 'time': record['stat_intv'], 'buckets':{}}
+            if circle_value  not in base_map[center_value]['buckets']:
+                base_map[center_value]['buckets'][circle_value] = {'counts':0, 'percent':0, 'title': center_value+"-"+circle_value}
+            base_map[center_value]['counts'] += renew_user_counts
+            base_map[center_value]['buckets'][circle_value]['counts'] += renew_user_counts
+        for center_value, center_map in base_map.items():
+            for circle_value, circle_map in center_map['buckets'].items():
+                circle_map['percent'] = round(circle_map['counts'] / total, 3)
+            #base_map[center_value]['buckets'][circle_value]['percent'] = base_map[center_value]['buckets'][circle_value]['counts'] / total
+        base_map['total'] = total
+        ci_mysql.close()
+        pp(base_map)
+    return jsonify(base_map)
+   
