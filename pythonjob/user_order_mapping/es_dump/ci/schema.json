@@ -37,6 +37,9 @@
         "origin_amount": {
           "type": "float"
         },
+        "order_no": {
+          "type": "keyword"
+        },
         "member_class": {
           "type": "keyword"
         },
