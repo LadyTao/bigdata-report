@@ -51,6 +51,7 @@ def parse_query_obj(q_obj):
     q_obj['dim'] = q_obj.get("dim", "productline")
     q_obj['intv'] = q_obj.get("intv", "1d")
     q_obj['condition'] = q_obj.get("condition", None)
+    q_obj['channel'] = q_obj.get("channel", ",".join(options['channel']))
     print(q_obj['condition'])
     if q_obj['condition'] is not None:
         q_obj['condition'] = json.loads(q_obj['condition'])
