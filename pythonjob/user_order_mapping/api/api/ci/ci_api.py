@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import collections
 import sys
 sys.path.append('..')
 sys.path.append('.')
@@ -12,7 +13,6 @@ import json
 from elasticsearch import Elasticsearch
 from flask import Blueprint, render_template
 from flasgger import swag_from
-
 ci_api = Blueprint('ci_api', __name__)
 es_host = settings.es_host
 with open('api/ci/search_template.json', "r") as template_file:
@@ -189,11 +189,14 @@ def get_dim_statistics_list(response):
                     continue
                 dim_matrix_map[bucket['dim']][key] += bucket[key]
 
+    sorted_dim_matrix_map = collections.OrderedDict(sorted(dim_matrix_map.items()))
+
     dim_matric_list = []
-    for dim, matrics_map in dim_matrix_map.items():
+    for dim, matrics_map in sorted_dim_matrix_map.items():
         matrics_map['dim'] = dim
         matrics_map['amount'] = round(matrics_map['amount'], 2) 
         dim_matric_list.append(matrics_map)
+    
     return dim_matric_list
 
 @ci_api.route("/ci_sales_option", methods=['GET'])
