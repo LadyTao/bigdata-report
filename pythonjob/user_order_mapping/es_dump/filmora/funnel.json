@@ -1,0 +1,73 @@
+{
+  "settings": {
+    "number_of_replicas": 1,
+    "index.mapping.ignore_malformed": false
+  },
+  "mappings": {
+    "report": {
+      "_all": {
+        "enabled": false
+      },
+      "dynamic": "false",
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "report_type": {
+          "type": "keyword"
+        },
+        "period": {
+          "type": "keyword"
+        },
+        "start": {
+          "type": "keyword"
+        },
+        "end": {
+          "type": "keyword"
+        },
+        "marketdep": {
+          "type": "keyword"
+        },
+        "productline": {
+          "type": "keyword"
+        },
+        "name": {
+          "type": "keyword"
+        },
+        "brand_name": {
+          "type": "keyword"
+        },
+        "site": {
+          "type": "keyword"
+        },
+        "productversion": {
+          "type": "keyword"
+        },
+        "platform": {
+          "type": "keyword"
+        },
+        "visit": {
+          "type": "float"
+        },
+        "download": {
+          "type": "float"
+        },
+        "download_sucess": {
+          "type": "float"
+        },
+        "install_success": {
+          "type": "float"
+        },
+        "regitst": {
+          "type": "float"
+        },
+        "filmora_purchase": {
+          "type": "float"
+        },
+        "resource_purchase": {
+          "type": "float"
+        }
+      }
+    }
+  }
+}
