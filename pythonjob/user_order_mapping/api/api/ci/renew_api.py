@@ -14,13 +14,13 @@ from flask import Blueprint, render_template
 from flasgger import swag_from
 import pymysql.cursors
 
-host = '10.14.1.102'
-port = 3306
-user= 'root'
-password = 'testlalatest'
+import settings
+host = settings.renew_mysql_host
+port = settings.renew_mysql_port
+user=  settings.renew_mysql_user
+password = settings.renew_mysql_password
 #db = 'data_sale'
-db = 'data_user'
-table = ''
+db = settings.renew_mysql_db
 
 renew_api = Blueprint('renew_api', __name__)
 es_host = settings.es_host
