@@ -75,7 +75,7 @@ if __name__ == "__main__":
     cursor.execute("use mart")
     
     wanted_field_list = [
-      'id', 'uid', 'productline', 'channel', 'subscribe_type', 'member_class', 
+      'id', 'uid', 'productline', 'channel', 'subscribe_type', 'member_class', 'order_no', 
       'os_platform', 'payment_pattern', 'amount', 'origin_amount', 'inputtime'
     ]   
     field_name_idx_map = get_field_mapping(cursor, 'ci_order', wanted_field_list)
