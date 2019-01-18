@@ -1,0 +1,73 @@
+{
+  "settings": {
+    "number_of_replicas": 1,
+    "index.mapping.ignore_malformed": false
+  },
+  "mappings": {
+    "customers": {
+      "_all": {
+        "enabled": false
+      },
+      "dynamic": "false",
+      "properties": {
+        "id": {
+          "type": "keyword"
+        },
+        "uid": {
+          "type": "keyword"
+        },
+        "email": {
+          "type": "keyword"
+        },
+        "username": {
+          "type": "keyword"
+        },
+        "language": {
+          "type": "keyword"
+        },
+        "register_platform": {
+          "type": "keyword"
+        },
+        "register_time": {
+          "type": "date",
+          "format": "date_optional_time"
+        },
+        "activated_platform": {
+          "type": "keyword"
+        },
+        "inputtime": {
+          "type": "date",
+          "format": "date_optional_time"
+        },
+        "last_visit": {
+          "type": "date",
+          "format": "date_optional_time"
+        },
+        "license": {
+          "type": "keyword"
+        },
+        "effects_paid": {
+          "type": "keyword"
+        },
+        "subscribed_es": {
+          "type": "keyword"
+        },
+        "download_free_es": {
+           "type": "keyword"
+        },
+        "edm_subscribe_status":{
+           "type": "keyword"
+        },
+        "is_old_member": {
+          "type": "keyword"
+        },
+        "country_cn": {
+          "type": "keyword"
+        },
+        "from_brand": {
+          "type": "keyword"
+        }
+      }
+    }
+  }
+}
