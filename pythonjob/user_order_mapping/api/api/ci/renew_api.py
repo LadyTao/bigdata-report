@@ -53,13 +53,9 @@ def parse_query_obj(q_obj):
     q_obj['channel'] = q_obj.get("channel", u"搜狗推广")
     q_obj['subtype'] = q_obj.get("subtype", "month")
     q_obj['intv'] = q_obj.get("intv", "1d") #1M
-    print("-------------", q_obj.get("same_type", ''))
     q_obj['same_type'] = True if q_obj.get("same_type", '')=="false" else False 
-    #print(q_obj['condition'])
-    #if q_obj['condition'] is not None:
-    #    q_obj['condition'] = json.loads(q_obj['condition'])
     q_obj['page'] = int(q_obj.get("page", '1'))
-    q_obj['size'] = int(q_obj.get("size", '20'))
+    q_obj['size'] = int(q_obj.get("size", '200000'))
     return q_obj
 
 
@@ -83,11 +79,10 @@ def gen_sql(q_obj):
 	from ci_member_renew_rate_day
 	where channel in (__CHANNEL_LIST___) AND expire_time_type='__EXPIRE_TYPE__' 
         AND stat_date>='__START__' AND stat_date<'__END__' 
-        __AND__SAME_TYPE__ group by stat_intv
+        __AND__SAME_TYPE__ group by stat_intv LIMIT __PAGE_START__, __PAGE_SIZE__
     """
     intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
     channel_list_str = "'%s'"%("','").join(q_obj['channel'].split(","))
-    #expire_type = q_obj['expire_time_type']
     and_same_type = ' AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if not q_obj['same_type'] else ''
     sql = sql.replace("__INTV_FIELD__", intv_field)\
              .replace("__CHANNEL_LIST___", channel_list_str)\
@@ -95,6 +90,8 @@ def gen_sql(q_obj):
              .replace("__AND__SAME_TYPE__", and_same_type)\
              .replace("__START__", q_obj['start'])\
              .replace("__END__", q_obj['end'])\
+             .replace("__PAGE_START__", str((q_obj['page']-1)))\
+             .replace("__PAGE_SIZE__", str(q_obj['size']))
      
     return sql   
 
@@ -193,7 +190,6 @@ def ci_retention_piechart():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
    
-
     ci_mysql = pymysql.connect(host=host, port=port, user=user, password=password, db=db, 
                                charset='utf8mb4', cursorclass=pymysql.cursors.SSDictCursor)
 
@@ -206,15 +202,18 @@ def ci_retention_piechart():
 	    where channel in (__CHANNEL_LIST___) AND expire_time_type='__EXPIRE_TYPE__' 
             AND stat_date>='__START__' AND stat_date<'__END__' 
             AND renew_user > 0 
-            AND expire_user_level = '__USER_LEVEL__'  
+            AND expire_user_level __USER_LEVEL__  
             __AND__SAME_TYPE__ group by stat_intv, renew_user_level, renew_time_type
         """
         #AND stat_intv = '__PIE_TIME__'
 
         intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
         channel_list_str = "'%s'"%("','").join(q_obj['channel'].split(","))
-        #expire_type = q_obj['expire_time_type']
-        #pie_time = record['stat_intv'].strftime('%Y-%m-%d') if q_obj['intv'] == '1d' else record['stat_intv'] 
+        if q_obj['expire_user_level'] == "总会员":
+            expire_user_level =  "in ('高级会员','VIP会员','企业会员')"
+        else:
+            expire_user_level = "='%s'" %q_obj['expire_user_level']
+        print(expire_user_level)
         and_same_type = ' AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if not q_obj['same_type'] else ''
         sql_query = sql.replace("__INTV_FIELD__", intv_field)\
                  .replace("__CHANNEL_LIST___", channel_list_str)\
@@ -222,11 +221,10 @@ def ci_retention_piechart():
                  .replace("__AND__SAME_TYPE__", and_same_type)\
                  .replace("__START__", q_obj['start'])\
                  .replace("__END__", q_obj['end'])\
-                 .replace("__USER_LEVEL__", q_obj['expire_user_level'])\
+                 .replace("__USER_LEVEL__", expire_user_level)\
                  .replace("__PIE_TIME__", q_obj['pie_time'])
         print(sql_query)
         cursor.execute(sql_query)
-        #result = src_cursor.fetchone()
         record_list = cursor.fetchall()
         """
             {
@@ -254,13 +252,8 @@ def ci_retention_piechart():
             center_key, circle_key = 'renew_user_level', 'renew_time_type'
         base_map = {}  
         total = 0
+        pp(record_list)
         for record in record_list:
-            #pie_time = record['stat_intv'].strftime('%Y-%m-%d') if q_obj['intv'] == '1d' else record['stat_intv'] 
-            #if pie_time != q_obj['pie_time']:
-            #    print(pie_time, 'pass')
-            #    continue
-            #pie_user_type = record['stat_intv'].strftime('%Y-%m-%d') if q_obj['intv'] == '1d' else record['stat_intv'] 
-         
             renew_user_counts = int(record['renew_user_counts'])
             total += renew_user_counts
             center_value, circle_value = record[center_key], record[circle_key]
@@ -274,7 +267,6 @@ def ci_retention_piechart():
         for center_value, center_map in base_map.items():
             for circle_value, circle_map in center_map['buckets'].items():
                 circle_map['percent'] = round(circle_map['counts'] / total, 3)
-            #base_map[center_value]['buckets'][circle_value]['percent'] = base_map[center_value]['buckets'][circle_value]['counts'] / total
         base_map['total'] = total
         ci_mysql.close()
         pp(base_map)
