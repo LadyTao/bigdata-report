@@ -111,6 +111,7 @@ def process_aggs(dim, aggs):
     '''
     output = []
     for bucket in aggs['intv']['buckets']:
+        pp(bucket)  
         data = {
             'time': bucket['key_as_string'],
             'buckets': []
@@ -129,7 +130,8 @@ def process_aggs(dim, aggs):
                  {
                    'dim': bucket['key_as_string'],
                    'order_counts': bucket['doc_count'],
-                   'amount': round(bucket['amount']['value'], 2)
+                   'amount': round(bucket['amount']['value'], 2),
+                   'user_counts': bucket['UID']['value']
                  }
             )
             output.append(data)
@@ -148,7 +150,7 @@ def process_aggs(dim, aggs):
 
 def query_date_histograms(q_obj):
     es_query_obj = make_es_query_obj(template_source, q_obj)
-    pp(es_query_obj)
+    #pp(es_query_obj)
     response = make_es_query(es_query_obj)
     aggs = response['aggregations']
     response = process_aggs(q_obj['dim'], aggs)
