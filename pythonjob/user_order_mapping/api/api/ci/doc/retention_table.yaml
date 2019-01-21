@@ -41,6 +41,18 @@ parameters:
      enum: ['true', 'false']
      default: 'false'
      description: '会员续费率(true)、同类型续费率(false)'
+   - name: page
+     in: query
+     type: int
+     required: false
+     default: 1
+     description: 'Page of pagination'
+   - name: size
+     in: query
+     type: int
+     required: false
+     default: 200000
+     description: 'size of pagination'
 
 responses:
    200:
