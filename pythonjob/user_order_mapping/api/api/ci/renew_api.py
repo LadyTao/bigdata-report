@@ -164,7 +164,11 @@ def ci_retention_table():
     for idx, dim_statistics in enumerate(dim_statistics_list):
         if start_idx <= idx < end_idx:
             paged_list.append(dim_statistics)
-    return jsonify(paged_list)
+    result = {
+        'total': len(dim_statistics_list),
+        'result': paged_list
+    }
+    return jsonify(result)
 
 
 @renew_api.route("/ci_retention_csv", methods=['GET'])
