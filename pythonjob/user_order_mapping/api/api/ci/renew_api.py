@@ -50,7 +50,8 @@ def parse_condition(condition):
 def parse_query_obj(q_obj):
     q_obj['start'] = q_obj.get("start", "2018-12-01")
     q_obj['end'] = q_obj.get("end", "2019-01-31")
-    q_obj['channel'] = q_obj.get("channel", u"搜狗推广")
+    q_obj['channel'] = q_obj.get("channel", ','.join(options['channel']))
+    q_obj['channel'] = "','".join(q_obj['channel'].split(","))
     q_obj['subtype'] = q_obj.get("subtype", "month")
     q_obj['intv'] = q_obj.get("intv", "1d") #1M
     q_obj['same_type'] = True if q_obj.get("same_type", '')=="false" else False 
@@ -77,15 +78,14 @@ def gen_sql(q_obj):
 	sum(case when expire_user_level="企业会员" then renew_user else 0 end) as enter_renew_user,
 	sum(case when expire_user_level="企业会员" then renew_user else 0 end)/sum(case when expire_user_level="企业会员" then expire_user else 0 end) as enter_renew_rate
 	from ci_member_renew_rate_day
-	where channel in (__CHANNEL_LIST___) AND expire_time_type='__EXPIRE_TYPE__' 
+	where channel in ('__CHANNEL_LIST___') AND expire_time_type='__EXPIRE_TYPE__' 
         AND stat_date>='__START__' AND stat_date<'__END__' 
         __AND__SAME_TYPE__ group by stat_intv LIMIT __PAGE_START__, __PAGE_SIZE__
     """
     intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
-    channel_list_str = "'%s'"%("','").join(q_obj['channel'].split(","))
     and_same_type = ' AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if not q_obj['same_type'] else ''
     sql = sql.replace("__INTV_FIELD__", intv_field)\
-             .replace("__CHANNEL_LIST___", channel_list_str)\
+             .replace("__CHANNEL_LIST___", q_obj['channel'])\
              .replace("__EXPIRE_TYPE__", q_obj['expire_time_type'])\
              .replace("__AND__SAME_TYPE__", and_same_type)\
              .replace("__START__", q_obj['start'])\
@@ -203,24 +203,21 @@ def ci_retention_piechart():
             select __INTV_FIELD__ as stat_intv,
             renew_time_type, renew_user_level, sum(renew_user) as renew_user_counts
 	    from ci_member_renew_rate_day
-	    where channel in (__CHANNEL_LIST___) AND expire_time_type='__EXPIRE_TYPE__' 
+	    where channel in ('__CHANNEL_LIST___') AND expire_time_type='__EXPIRE_TYPE__' 
             AND stat_date>='__START__' AND stat_date<'__END__' 
             AND renew_user > 0 
             AND expire_user_level __USER_LEVEL__  
             __AND__SAME_TYPE__ group by stat_intv, renew_user_level, renew_time_type
         """
-        #AND stat_intv = '__PIE_TIME__'
 
         intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
-        channel_list_str = "'%s'"%("','").join(q_obj['channel'].split(","))
         if q_obj['expire_user_level'] == "总会员":
             expire_user_level =  "in ('高级会员','VIP会员','企业会员')"
         else:
             expire_user_level = "='%s'" %q_obj['expire_user_level']
-        print(expire_user_level)
         and_same_type = ' AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if not q_obj['same_type'] else ''
         sql_query = sql.replace("__INTV_FIELD__", intv_field)\
-                 .replace("__CHANNEL_LIST___", channel_list_str)\
+                 .replace("__CHANNEL_LIST___", q_obj['channel'])\
                  .replace("__EXPIRE_TYPE__", q_obj['expire_time_type'])\
                  .replace("__AND__SAME_TYPE__", and_same_type)\
                  .replace("__START__", q_obj['start'])\
@@ -256,7 +253,6 @@ def ci_retention_piechart():
             center_key, circle_key = 'renew_user_level', 'renew_time_type'
         base_map = {}  
         total = 0
-        pp(record_list)
         for record in record_list:
             renew_user_counts = int(record['renew_user_counts'])
             total += renew_user_counts
@@ -273,6 +269,5 @@ def ci_retention_piechart():
                 circle_map['percent'] = round(circle_map['counts'] / total, 3)
         base_map['total'] = total
         ci_mysql.close()
-        pp(base_map)
     return jsonify(base_map)
    
