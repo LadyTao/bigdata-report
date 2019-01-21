@@ -40,7 +40,7 @@ parameters:
      required: true
      enum: ['true', 'false']
      default: 'false'
-     description: '会员续费率(true)、同类型续费率(false)'
+     description: '会员续费率(false)、同类型续费率(true)'
    - name: page
      in: query
      type: int

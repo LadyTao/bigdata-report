@@ -54,7 +54,7 @@ def parse_query_obj(q_obj):
     q_obj['channel'] = "','".join(q_obj['channel'].split(","))
     q_obj['subtype'] = q_obj.get("subtype", "month")
     q_obj['intv'] = q_obj.get("intv", "1d") #1M
-    q_obj['same_type'] = True if q_obj.get("same_type", '')=="false" else False 
+    q_obj['same_type'] = False if q_obj.get("same_type", 'false')=="false" else True
     q_obj['page'] = int(q_obj.get("page", '1'))
     q_obj['size'] = int(q_obj.get("size", '200000'))
     return q_obj
@@ -83,7 +83,7 @@ def gen_sql(q_obj):
         __AND__SAME_TYPE__ group by stat_intv LIMIT __PAGE_START__, __PAGE_SIZE__
     """
     intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
-    and_same_type = ' AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if not q_obj['same_type'] else ''
+    and_same_type = 'AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if q_obj['same_type'] else ''
     sql = sql.replace("__INTV_FIELD__", intv_field)\
              .replace("__CHANNEL_LIST___", q_obj['channel'])\
              .replace("__EXPIRE_TYPE__", q_obj['expire_time_type'])\
@@ -215,7 +215,7 @@ def ci_retention_piechart():
             expire_user_level =  "in ('高级会员','VIP会员','企业会员')"
         else:
             expire_user_level = "='%s'" %q_obj['expire_user_level']
-        and_same_type = ' AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if not q_obj['same_type'] else ''
+        and_same_type = ' AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if q_obj['same_type'] else ''
         sql_query = sql.replace("__INTV_FIELD__", intv_field)\
                  .replace("__CHANNEL_LIST___", q_obj['channel'])\
                  .replace("__EXPIRE_TYPE__", q_obj['expire_time_type'])\
@@ -257,7 +257,7 @@ def ci_retention_piechart():
             renew_user_counts = int(record['renew_user_counts'])
             total += renew_user_counts
             center_value, circle_value = record[center_key], record[circle_key]
-            print(record['renew_time_type'], record['renew_user_level'], record['renew_user_counts'], record['stat_intv'], total)
+            #print(record['renew_time_type'], record['renew_user_level'], record['renew_user_counts'], record['stat_intv'], total)
             if center_value not in base_map:
                 base_map[center_value] = {'counts':0, 'title': center_value, 'time': record['stat_intv'], 'buckets':{}}
             if circle_value  not in base_map[center_value]['buckets']:
