@@ -68,19 +68,51 @@ def ci_retention_option():
 
 def gen_sql(q_obj):
     sql = """
-        select __INTV_FIELD__  as stat_intv,
-	sum(renew_user) as total_renew_user,
-	sum(renew_user)/sum(expire_user) as total_renew_rate,
-	sum(case when expire_user_level="高级会员" then renew_user else 0 end) as senior_renew_user,
-	sum(case when expire_user_level="高级会员" then renew_user else 0 end)/sum(case when expire_user_level="高级会员" then expire_user else 0 end) as senior_renew_rate,
-	sum(case when expire_user_level="VIP会员" then renew_user else 0 end) as vip_renew_user,
-	sum(case when expire_user_level="VIP会员" then renew_user else 0 end)/sum(case when expire_user_level="VIP会员" then expire_user else 0 end) as vip_renew_rate,
-	sum(case when expire_user_level="企业会员" then renew_user else 0 end) as enter_renew_user,
-	sum(case when expire_user_level="企业会员" then renew_user else 0 end)/sum(case when expire_user_level="企业会员" then expire_user else 0 end) as enter_renew_rate
-	from ci_member_renew_rate_day
-	where channel in ('__CHANNEL_LIST___') AND expire_time_type='__EXPIRE_TYPE__' 
-        AND stat_date>='__START__' AND stat_date<'__END__' 
-        __AND__SAME_TYPE__ group by stat_intv LIMIT __PAGE_START__, __PAGE_SIZE__
+	select 
+	temp.stat_intv, 
+	ifnull(ci.total_renew_user, 0) as total_renew_user, 
+	ifnull(ci.total_renew_rate, 0) as total_renew_rate ,
+	ifnull(ci.senior_renew_user, 0) as senior_renew_user, 
+	ifnull(ci.senior_renew_rate, 0) as senior_renew_rate ,
+	ifnull(ci.vip_renew_user, 0) as vip_renew_user ,
+	ifnull(ci.vip_renew_rate, 0) as vip_renew_rate ,
+	ifnull(ci.enter_renew_user, 0) as enter_renew_user, 
+	ifnull(ci.enter_renew_rate, 0) as enter_renew_rate
+
+	from (
+	select __INTV_FIELD__ as stat_intv from
+	    (
+	       select adddate('1970-01-01',t4*10000 + t3*1000 + t2*100 + t1*10 + t0) stat_date from
+		 (select 0 t0 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t0,
+		 (select 0 t1 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t1,
+		 (select 0 t2 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t2,
+		 (select 0 t3 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t3,
+		 (select 0 t4 union select 1 union select 2 union select 3 union select 4 union select 5 union select 6 union select 7 union select 8 union select 9) t4
+	       ) v
+	     Where stat_date between '__START__' and '__END__'
+	     group by stat_intv
+	) as temp left join 
+	(
+
+            select __INTV_FIELD__  as stat_intv,
+    	    sum(renew_user) as total_renew_user,
+    	    sum(renew_user)/sum(expire_user) as total_renew_rate,
+	    sum(case when expire_user_level="高级会员" then renew_user else 0 end) as senior_renew_user,
+	    sum(case when expire_user_level="高级会员" then renew_user else 0 end)/sum(case when expire_user_level="高级会员" then expire_user else 0 end) as senior_renew_rate,
+	    sum(case when expire_user_level="VIP会员" then renew_user else 0 end) as vip_renew_user,
+	    sum(case when expire_user_level="VIP会员" then renew_user else 0 end)/sum(case when expire_user_level="VIP会员" then expire_user else 0 end) as vip_renew_rate,
+	    sum(case when expire_user_level="企业会员" then renew_user else 0 end) as enter_renew_user,
+	    sum(case when expire_user_level="企业会员" then renew_user else 0 end)/sum(case when expire_user_level="企业会员" then expire_user else 0 end) as enter_renew_rate
+	    from ci_member_renew_rate_day
+	    where channel in ('__CHANNEL_LIST___') AND expire_time_type='__EXPIRE_TYPE__' 
+            AND stat_date>='__START__' AND stat_date<'__END__' 
+            __AND__SAME_TYPE__ 
+ 
+           group by stat_intv
+           order by stat_intv)
+       as ci 
+       on temp.stat_intv = ci.stat_intv 
+       LIMIT __PAGE_START__, __PAGE_SIZE__ 
     """
     intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
     and_same_type = 'AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if q_obj['same_type'] else ''
@@ -109,7 +141,8 @@ def query_retention_data(q_obj):
         
         for record in record_list:
             data = {
-               "time": record['stat_intv'].strftime('%Y-%m-%d') if q_obj['intv'] == '1d' else record['stat_intv'], 
+               "time": record['stat_intv'],
+		#.strftime('%Y-%m-%d') if q_obj['intv'] == '1d' else record['stat_intv'], 
                "buckets":[]} 
             # stat_inv, total_renew_user, ....
             dim_col_map = {
