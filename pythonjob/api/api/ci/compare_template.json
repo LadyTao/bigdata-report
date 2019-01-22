@@ -1,0 +1,56 @@
+{
+  "aggs": {
+    "amount": {
+      "sum": {
+        "field": "amount"
+      }
+    },
+    "origin_amount": {
+      "sum": {
+        "field": "origin_amount"
+      }
+    },
+    "uid": {
+      "cardinality": {
+        "field": "uid"
+      }
+    }
+  },
+  "size": 0,
+  "_source": {
+    "excludes": []
+  },
+  "stored_fields": [
+    "*"
+  ],
+  "script_fields": {},
+  "docvalue_fields": [
+    {
+      "field": "inputtime",
+      "format": "date_time"
+    }
+  ],
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "range": {
+            "inputtime": {
+              "gte": "__START__",
+              "lte": "__END__",
+              "format": "yyyy-MM-dd",
+             "time_zone": "+08:00"
+            }
+          }
+        }
+      ],
+      "filter": [
+        {
+          "match_all": {}
+        }
+      ],
+      "should": [],
+      "must_not": []
+    }
+  }
+}

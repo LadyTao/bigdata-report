@@ -17,6 +17,8 @@ ci_api = Blueprint('ci_api', __name__)
 es_host = settings.es_host
 with open('api/ci/search_template.json', "r") as template_file:
     template_source = template_file.read()    
+with open('api/ci/compare_template.json', "r") as compare_template_file:
+    compare_template_source = compare_template_file.read()    
  
 options = {
     "channel": ["百度推广","胡萝卜周","易企传","搜狗推广","360推广","BD通用","BD-XL","BD-JJDS","baidu-mobile","BD-KSJKH","baidu-zhishi","baidu-pcinfo","麦本本","BD电商活动","赢商荟","智适应","bili","BZdownload","依凰蓝盾","常乐九九","栗子摄影器材","连锁正品店","BZdownload2","广点通推广","优设网","齐论电商","金山毒霸","腾讯管家","360管家","深圳高级中学","搜狗WAP注册","360WAP注册","神马WAP注册","10天试用-电商组自媒体","百度搜索推广WAP端","高校拓展","搜狗WAP下载","BD官网","BD-视达","神剪手BD微信社群新注册用户5天VIP","今日头条IOS","神剪手BD-QQ群李栋推广","百度搜索品牌推广PC端","微博红人推广（app）"],
@@ -208,8 +210,6 @@ def ci_option():
 @ci_api.route("/ci_sales_graph", methods=['GET'])
 @swag_from('doc/ci_sales_graph.yaml')
 def ci_online_stats():
-    #q = request.args.get("q")
-    #q_obj = parse_query_obj(json.loads(q))
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
     
@@ -219,8 +219,6 @@ def ci_online_stats():
 @ci_api.route("/ci_sales_table", methods=['GET'])
 @swag_from('doc/ci_sales_table.yaml')
 def ci_sales_table():
-    #q = request.args.get("q")
-    #q_obj = parse_query_obj(json.loads(q))
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
     date_histograms = query_date_histograms(q_obj)
@@ -237,12 +235,41 @@ def ci_sales_table():
     }
     return jsonify(result)
 
+@ci_api.route("/ci_sales_compare", methods=['GET'])
+@swag_from('doc/ci_sales_compare.yaml')
+def ci_sales_compare():
+    q_obj = request.args.to_dict()
+    q_obj = parse_query_obj(q_obj)
+    es_query_str = compare_template_source.replace("__START__", q_obj['start'])\
+                                          .replace("__END__", q_obj['end'])
+    es_query_obj = json.loads(es_query_str)
+    response = make_es_query(es_query_obj)
+    """response example:
+    '_shards': {'failed': 0, 'skipped': 0, 'successful': 5, 'total': 5},
+    'aggregations': {
+        'amount': {'value': 358120.0384674072},
+        'origin_amount': {'value': 733779.408416748},
+        'uid': {'value': 7669},
+    },
+    'hits': {'hits': [], 'max_score': 0.0, 'total': 9504},
+    'timed_out': False,
+    'took': 11,
+    """
+    amount = response['aggregations']['amount']['value'] if 'aggregations' in response else 0
+    origin_amount = response['aggregations']['origin_amount']['value'] if 'aggregations' in response else 0
+    uid = response['aggregations']['uid']['value'] if 'aggregations' in response else 0
+    result = {
+        'title': q_obj['title'],
+        '销售总额不含税': round(amount, 2),
+        '销售净额': round(origin_amount, 2),
+        '用户数': uid
+    }
+    return jsonify(result)
+
 
 @ci_api.route("/ci_sales_csv", methods=['GET'])
 @swag_from('doc/ci_sales_csv.yaml')
 def ci_sales_csv():
-    #q = request.args.get("q")
-    #q_obj = parse_query_obj(json.loads(q))
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
     date_histograms = query_date_histograms(q_obj)
