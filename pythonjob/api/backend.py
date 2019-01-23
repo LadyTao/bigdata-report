@@ -14,7 +14,8 @@ import settings
 
 from api.filmora.api import vp_api
 from api.filmora.funnel import funnel_api
-from api.ci.ci_api import ci_api
+from api.ci.ci_api import es_ci_api
+from api.ci.sql_ci_api import ci_api
 from api.ci.renew_api import renew_api
 
 def create_app():
@@ -23,6 +24,7 @@ def create_app():
     app.register_blueprint(vp_api)
     app.register_blueprint(funnel_api)
     app.register_blueprint(ci_api)
+    app.register_blueprint(es_ci_api)
     app.register_blueprint(renew_api)
 
     cors = CORS(app)
