@@ -132,17 +132,15 @@ def query_retention_data(q_obj):
 
     result = []
     with ci_mysql.cursor() as cursor:
-        #table = 'ci_member_same_type_renew_rate_day' if q_obj['same_type'] else 'ci_member_renew_rate_day'
+
         sql_query = gen_sql(q_obj)  
         print(sql_query)
-
         cursor.execute(sql_query)
         record_list = cursor.fetchall()
         
         for record in record_list:
             data = {
                "time": record['stat_intv'],
-		#.strftime('%Y-%m-%d') if q_obj['intv'] == '1d' else record['stat_intv'], 
                "buckets":[]} 
             # stat_inv, total_renew_user, ....
             dim_col_map = {
@@ -222,7 +220,7 @@ def ci_retention_csv():
 
 
 @renew_api.route("/ci_retention_pie_chart", methods=['GET'])
-@swag_from('doc/ci_retention_pie_chart.yaml')
+@swag_from('doc/retention_pie_chart.yaml')
 def ci_retention_piechart():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
