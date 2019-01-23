@@ -13,7 +13,7 @@ import json
 from elasticsearch import Elasticsearch
 from flask import Blueprint, render_template
 from flasgger import swag_from
-ci_api = Blueprint('ci_api', __name__)
+es_ci_api = Blueprint('es_ci_api', __name__)
 es_host = settings.es_host
 with open('api/ci/search_template.json', "r") as template_file:
     template_source = template_file.read()    
@@ -151,7 +151,8 @@ def process_aggs(dim, aggs):
 
 def query_date_histograms(q_obj):
     es_query_obj = make_es_query_obj(template_source, q_obj)
-    #pp(es_query_obj)
+    pp(es_query_obj)
+    pp(json.dumps(es_query_obj))
     response = make_es_query(es_query_obj)
     aggs = response['aggregations']
     response = process_aggs(q_obj['dim'], aggs)
@@ -202,13 +203,13 @@ def get_dim_statistics_list(response):
     
     return dim_matric_list
 
-@ci_api.route("/ci_sales_option", methods=['GET'])
+@es_ci_api.route("/ci_sales_option", methods=['GET'])
 @swag_from('doc/ci_sales_option.yaml')
 def ci_option():
     return jsonify(options)   
 
-@ci_api.route("/ci_sales_graph", methods=['GET'])
-@swag_from('doc/ci_sales_graph.yaml')
+@es_ci_api.route("/es_ci_sales_graph", methods=['GET'])
+@swag_from('doc/es_ci_sales_graph.yaml')
 def ci_online_stats():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
@@ -216,9 +217,9 @@ def ci_online_stats():
     response = query_date_histograms(q_obj)
     return jsonify(response)   
 
-@ci_api.route("/ci_sales_table", methods=['GET'])
-@swag_from('doc/ci_sales_table.yaml')
-def ci_sales_table():
+@es_ci_api.route("/es_ci_sales_table", methods=['GET'])
+@swag_from('doc/es_ci_sales_table.yaml')
+def es_ci_sales_table():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
     date_histograms = query_date_histograms(q_obj)
@@ -235,9 +236,9 @@ def ci_sales_table():
     }
     return jsonify(result)
 
-@ci_api.route("/ci_sales_compare", methods=['GET'])
-@swag_from('doc/ci_sales_compare.yaml')
-def ci_sales_compare():
+@es_ci_api.route("/es_ci_sales_compare", methods=['GET'])
+@swag_from('doc/es_ci_sales_compare.yaml')
+def es_ci_sales_compare():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
     es_query_str = compare_template_source.replace("__START__", q_obj['start'])\
@@ -267,9 +268,9 @@ def ci_sales_compare():
     return jsonify(result)
 
 
-@ci_api.route("/ci_sales_csv", methods=['GET'])
-@swag_from('doc/ci_sales_csv.yaml')
-def ci_sales_csv():
+@es_ci_api.route("/es_ci_sales_csv", methods=['GET'])
+@swag_from('doc/es_ci_sales_csv.yaml')
+def es_ci_sales_csv():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
     date_histograms = query_date_histograms(q_obj)
