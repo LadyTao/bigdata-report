@@ -95,18 +95,18 @@ def gen_sql(q_obj):
 	(
 
             select __INTV_FIELD__  as stat_intv,
-    	    sum(renew_user) as total_renew_user,
-    	    sum(renew_user)/sum(expire_user) as total_renew_rate,
-	    sum(case when expire_user_level="高级会员" then renew_user else 0 end) as senior_renew_user,
-	    sum(case when expire_user_level="高级会员" then renew_user else 0 end)/sum(case when expire_user_level="高级会员" then expire_user else 0 end) as senior_renew_rate,
-	    sum(case when expire_user_level="VIP会员" then renew_user else 0 end) as vip_renew_user,
-	    sum(case when expire_user_level="VIP会员" then renew_user else 0 end)/sum(case when expire_user_level="VIP会员" then expire_user else 0 end) as vip_renew_rate,
-	    sum(case when expire_user_level="企业会员" then renew_user else 0 end) as enter_renew_user,
-	    sum(case when expire_user_level="企业会员" then renew_user else 0 end)/sum(case when expire_user_level="企业会员" then expire_user else 0 end) as enter_renew_rate
+            __TOTAL_RENEW_USER__ as total_renew_user,
+	    sum(expire_user) as total_expire_user,
+    	    __TOTAL_RENEW_USER__/sum(expire_user) as total_renew_rate,
+	    sum(case when expire_user_level="高级会员" __SAME_PADDING__ then renew_user else 0 end) as senior_renew_user,
+	    sum(case when expire_user_level="高级会员" __SAME_PADDING__ then renew_user else 0 end)/sum(case when expire_user_level="高级会员" then expire_user else 0 end) as senior_renew_rate,
+	    sum(case when expire_user_level="VIP会员" __SAME_PADDING__ then renew_user else 0 end) as vip_renew_user,
+	    sum(case when expire_user_level="VIP会员" __SAME_PADDING__ then renew_user else 0 end)/sum(case when expire_user_level="VIP会员" then expire_user else 0 end) as vip_renew_rate,
+	    sum(case when expire_user_level="企业会员" __SAME_PADDING__ then renew_user else 0 end) as enter_renew_user,
+	    sum(case when expire_user_level="企业会员" __SAME_PADDING__ then renew_user else 0 end)/sum(case when expire_user_level="企业会员" then expire_user else 0 end) as enter_renew_rate
 	    from ci_member_renew_rate_day
 	    where channel in ('__CHANNEL_LIST___') AND expire_time_type='__EXPIRE_TYPE__' 
             AND stat_date between '__START__' and '__END__'  
-            __AND__SAME_TYPE__ 
  
            group by stat_intv
            order by stat_intv)
@@ -115,11 +115,17 @@ def gen_sql(q_obj):
        LIMIT __PAGE_START__, __PAGE_SIZE__ 
     """
     intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
-    and_same_type = 'AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if q_obj['same_type'] else ''
+    if q_obj['same_type']:
+        total_renew_user =  "sum(case when expire_user_level=renew_user_level and expire_time_type=renew_time_type then renew_user else 0 end)"
+    else:
+        total_renew_user = "sum(renew_user)"
+    same_padding = "and expire_user_level=renew_user_level and expire_time_type=renew_time_type" if q_obj['same_type'] else ''
+
     sql = sql.replace("__INTV_FIELD__", intv_field)\
              .replace("__CHANNEL_LIST___", q_obj['channel'])\
              .replace("__EXPIRE_TYPE__", q_obj['expire_time_type'])\
-             .replace("__AND__SAME_TYPE__", and_same_type)\
+	     .replace(" __TOTAL_RENEW_USER__", total_renew_user)\
+             .replace("__SAME_PADDING__", same_padding)\
              .replace("__START__", q_obj['start'])\
              .replace("__END__", q_obj['end'])\
              .replace("__PAGE_START__", str((q_obj['page']-1)))\
@@ -127,14 +133,12 @@ def gen_sql(q_obj):
      
     return sql   
 
-def query_retention_data(q_obj):
+def query_retention_data(sql_query, q_obj):
     ci_mysql = pymysql.connect(host=host, port=port, user=user, password=password, db=db, charset='utf8mb4', cursorclass=pymysql.cursors.SSDictCursor)
 
     result = []
     with ci_mysql.cursor() as cursor:
 
-        sql_query = gen_sql(q_obj)  
-        print(sql_query)
         cursor.execute(sql_query)
         record_list = cursor.fetchall()
         
@@ -178,7 +182,9 @@ def get_dim_statistics_list(graph_plot_list):
 def ci_retention_graph():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    date_histograms = query_retention_data(q_obj)
+    sql_query = gen_sql(q_obj)  
+    print(sql_query)
+    date_histograms = query_retention_data(sql_query, q_obj)
     return jsonify(date_histograms)
 
 
@@ -187,7 +193,8 @@ def ci_retention_graph():
 def ci_retention_table():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    date_histograms = query_retention_data(q_obj)
+    sql_query = gen_sql(q_obj)  
+    date_histograms = query_retention_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
 
     paged_list = []
@@ -207,7 +214,8 @@ def ci_retention_table():
 def ci_retention_csv():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    date_histograms = query_retention_data(q_obj)
+    sql_query = gen_sql(q_obj)  
+    date_histograms = query_retention_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
 
     key_list = ["时间","总会员续费数","总会员续费率","高级会员续费数","高级会员续费率","VIP会员续费数","VIP会员续费率"]
