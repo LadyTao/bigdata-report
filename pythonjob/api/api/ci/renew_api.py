@@ -224,7 +224,6 @@ def ci_retention_csv():
 def ci_retention_piechart():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-   
     ci_mysql = pymysql.connect(host=host, port=port, user=user, password=password, db=db, 
                                charset='utf8mb4', cursorclass=pymysql.cursors.SSDictCursor)
 

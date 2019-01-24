@@ -35,21 +35,15 @@ options = {
     "intv": ["1d", "1w", "1M"]
 }
 
-
 def parse_query_obj(q_obj):
     q_obj['start'] = q_obj.get("start", "2018-01-01")
     q_obj['end'] = q_obj.get("end", "2018-01-10")
     q_obj['dim'] = q_obj.get("dim", "inputtime")
     q_obj['intv'] = q_obj.get("intv", "1d")
-    q_obj['condition'] = q_obj.get("condition", "{}")
-    #q_obj['channel'] = q_obj.get("channel", ",".join(options['channel']))
-    print(q_obj['condition'])
-    #if q_obj['condition'] != {}:
-    q_obj['condition'] = json.loads(q_obj['condition'])
+    q_obj['condition'] = json.loads(q_obj.get('condition',"{}"))
     q_obj['page'] = int(q_obj.get("page", '1'))
     q_obj['size'] = int(q_obj.get("size", '20'))
     return q_obj
-
 
 def gen_sql(q_obj):
     pp(q_obj)
@@ -149,12 +143,6 @@ def query_date_histograms(q_obj):
     response = process_aggs(q_obj['dim'], aggs)
     return response
 
-def sql_get_dim_statistics_list(response):
-    """
-    list of dict
-    """
-    pass 
-
 def get_dim_statistics_list(response):
     '''
     input:
@@ -209,13 +197,6 @@ def ci_option():
 @ci_api.route("/ci_sales_graph", methods=['GET'])
 @swag_from('doc/ci_sales_graph.yaml')
 def ci_sales_graph():
-    """
-    q_obj = request.args.to_dict()
-    q_obj = parse_query_obj(q_obj)
-    
-    response = query_date_histograms(q_obj)
-    return jsonify(response) 
-    """  
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
     sql_query = gen_sql(q_obj)
@@ -302,10 +283,10 @@ def ci_sales_compare():
     for dim_statistics in dim_statistics_list:
         """
 	{
-		"amount": 0,
-		"dim": "神剪手BD-QQ群李栋推广",
-		"order_counts": 7,
-		"user_counts": 7
+	    "amount": 0,
+	    "dim": "神剪手BD-QQ群李栋推广",
+            "order_counts": 7,
+	    "user_counts": 7
 	},
         """
         for k,v in result.items():
