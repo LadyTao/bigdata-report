@@ -63,7 +63,7 @@ def gen_sql(q_obj):
            count(distinct uid) as user_counts
            from ci_order
            where
-           show_date between '__START__' and '__END__' 
+           __INTV__ between '__START__' and '__END__' 
            __CONDITIONS__
            group by intv, dim;
            """
@@ -97,14 +97,13 @@ def gen_sql(q_obj):
     
     return sql
 
-def query_ci_data(q_obj):
+def query_ci_data(sql_query, q_obj):
     ci_mysql = pymysql.connect(host=host, port=port, user=user, password=password, db=db, 
                charset='utf8mb4', cursorclass=pymysql.cursors.SSDictCursor)
 
     result = []
     with ci_mysql.cursor() as cursor:
 
-        sql_query = gen_sql(q_obj)
         print(sql_query)
         cursor.execute(sql_query)
         record_list = cursor.fetchall()
@@ -219,7 +218,8 @@ def ci_sales_graph():
     """  
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    date_histograms = query_ci_data(q_obj)
+    sql_query = gen_sql(q_obj)
+    date_histograms = query_ci_data(sql_query, q_obj)
     return jsonify(date_histograms)
 
 @ci_api.route("/ci_sales_table", methods=['GET'])
@@ -248,7 +248,9 @@ def ci_sales_table():
     # SQL-WAY
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    date_histograms = query_ci_data(q_obj)
+    sql_query = gen_sql(q_obj)
+    sql_query = sql_query.replace("group by intv,", "group by ")
+    date_histograms = query_ci_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
     paged_list = []
     start_idx, end_idx = q_obj['size']*(q_obj['page']-1), q_obj['size']*q_obj['page']
@@ -267,7 +269,9 @@ def ci_sales_table():
 def ci_sales_csv():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    date_histograms = query_ci_data(q_obj)
+    sql_query = gen_sql(q_obj)
+    sql_query = sql_query.replace("group by intv,", "group by ")
+    date_histograms = query_ci_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
     def dict_to_str(dim, dim_statistics_list):
         yield "%s,user_counts,order_counts,amount\n"%dim
@@ -285,7 +289,8 @@ def ci_sales_csv():
 def ci_sales_compare():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    date_histograms = query_ci_data(q_obj)
+    sql_query = gen_sql(q_obj)
+    date_histograms = query_ci_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
     result = {
         'title': q_obj['title'],
