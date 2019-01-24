@@ -105,7 +105,7 @@ def gen_sql(q_obj):
 	    sum(case when expire_user_level="企业会员" then renew_user else 0 end)/sum(case when expire_user_level="企业会员" then expire_user else 0 end) as enter_renew_rate
 	    from ci_member_renew_rate_day
 	    where channel in ('__CHANNEL_LIST___') AND expire_time_type='__EXPIRE_TYPE__' 
-            AND stat_date>='__START__' AND stat_date<'__END__' 
+            AND stat_date between '__START__' and '__END__'  
             __AND__SAME_TYPE__ 
  
            group by stat_intv
