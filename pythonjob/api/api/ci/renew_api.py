@@ -30,22 +30,6 @@ options = {
     "expire_plan": ["月付", "年付"]
 }
 
-def parse_condition(condition):
-    must, should = [], []
-    for field, terms in condition.items():
-        if len(terms) == 0:
-            continue
-        if len(terms) >= 1:
-            if type(terms) == str:
-                must.append({"term": {field: terms}})
-                continue
-            if type(terms) == list:
-                if len(terms) == 1:
-                    must.append({"term": {field: terms[0]}})
-                else:
-                    for term in terms: #LIST
-                        should.append({"term": {field: term}})
-    return must, should
 
 def parse_query_obj(q_obj):
     q_obj['start'] = q_obj.get("start", "2018-12-01")
@@ -162,6 +146,7 @@ def query_retention_data(sql_query, q_obj):
     ci_mysql.close()
     return result
  
+
 def get_dim_statistics_list(graph_plot_list):
     result = []
     for graph_plot in graph_plot_list:
@@ -308,4 +293,3 @@ def ci_retention_piechart():
         base_map['total'] = total
         ci_mysql.close()
     return jsonify(base_map)
-   
