@@ -255,22 +255,13 @@ def ci_sales_csv():
     date_histograms = query_ci_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
     def dict_to_str(dim, dim_statistics_list):
-    "channel": ["百度推广","胡萝卜周","易企传","搜狗推广","360推广","BD通用","BD-XL","BD-JJDS","baidu-mobile","BD-KSJKH","baidu-zhishi","baidu-pcinfo","麦本本","BD电商活动","赢商荟","智适应","bili","BZdownload","依凰蓝盾","常乐九九","栗子摄影器材","连锁正品店","BZdownload2","广点通推广","优设网","齐论电商","金山毒霸","腾讯管家","360管家","深圳高级中学","搜狗WAP注册","360WAP注册","神马WAP注册","10天试用-电商组自媒体","百度搜索推广WAP端","高校拓展","搜狗WAP下载","BD官网","BD-视达","神剪手BD微信社群新注册用户5天VIP","今日头条IOS","神剪手BD-QQ群李栋推广","百度搜索品牌推广PC端","微博红人推广（app）"],
-    "productline": ["神剪手","神剪手移动端","其他"],
-    "subscribe_type": ["月付","年付","其他"],
-    "member_class": ["高级会员","VIP至尊会员","企业会员","其他"],
-    "os_platform": ["Windows","Andriod","IOS","其他"],
-    "payment_pattern": ["支付宝","微信","小程序","IOS支付","无需支付","其他"],
-    "intv": ["1d", "1w", "1M"]
-
         field_mapping = {"channel": "渠道", "productline": "产品线", 
                          "subscribe_type": "订阅类型", "member_class": "会员等级",
                          "os_platform": "操作系统", "payment_pattern": "支付方式"}
-
         import codecs
         yield codecs.BOM_UTF8
         #yield "%s,user_counts,order_counts,amount\n"%dim
-        yield "%s,用户数,订单数,总金额\n"%dim
+        yield "%s,用户数,订单数,总金额\n"%field_mapping[dim]
         for dim_statistics in dim_statistics_list:
             yield "%s,%s,%s,%s\n"%(dim_statistics['dim'],
                                  dim_statistics['user_counts'],
