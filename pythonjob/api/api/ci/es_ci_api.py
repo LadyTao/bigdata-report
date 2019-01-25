@@ -276,6 +276,8 @@ def es_ci_sales_csv():
     date_histograms = query_date_histograms(q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
     def dict_to_str(dim, dim_statistics_list):
+        import codecs
+        yield codecs.BOM_UTF8
         yield "%s,user_counts,order_counts,amount\n"%dim
         for dim_statistics in dim_statistics_list:
             yield "%s,%s,%s,%s\n"%(dim_statistics['dim'],

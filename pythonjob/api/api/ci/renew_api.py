@@ -205,6 +205,8 @@ def ci_retention_csv():
 
     key_list = ["时间","总会员续费数","总会员续费率","高级会员续费数","高级会员续费率","VIP会员续费数","VIP会员续费率"]
     def dict_to_str(dim_statistics_list):
+        import codecs
+        yield codecs.BOM_UTF8
         yield ",".join(key_list)+"\n"
         for dim_statistics in dim_statistics_list:
             dim_statistics_str = ",".join([str(dim_statistics[key]) for key in key_list]) + "\n"
