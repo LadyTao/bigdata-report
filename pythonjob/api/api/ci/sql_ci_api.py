@@ -30,7 +30,7 @@ options = {
     "productline": ["神剪手","神剪手移动端","其他"],
     "subscribe_type": ["月付","年付","其他"],
     "member_class": ["高级会员","VIP至尊会员","企业会员","其他"],
-    "os_platform": ["Windows","Andriod","IOS","其他"],
+    "os_platform": ["Windows","Android","IOS","其他"],
     "payment_pattern": ["支付宝","微信","小程序","IOS支付","无需支付","其他"],
     "intv": ["1d", "1w", "1M"]
 }
