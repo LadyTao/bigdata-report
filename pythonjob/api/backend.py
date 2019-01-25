@@ -14,7 +14,7 @@ import settings
 
 from api.filmora.api import vp_api
 from api.filmora.funnel import funnel_api
-from api.ci.ci_api import es_ci_api
+from api.ci.es_ci_api import es_ci_api
 from api.ci.sql_ci_api import ci_api
 from api.ci.renew_api import renew_api
 
