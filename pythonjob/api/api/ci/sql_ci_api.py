@@ -17,6 +17,7 @@ from flasgger import swag_from
 
 ci_api = Blueprint('ci_api', __name__)
 
+from api.ci import channel_options
 import pymysql.cursors
 import settings
 
@@ -50,107 +51,8 @@ channel_password = settings.ci_channel_password
 channel_db = settings.ci_channel_db
 
 
-def ci_channel_info(host, port, user, password, db, charset='utf8mb4'):
-    """
-    用于获取神剪手后台数据库的渠道分类信息，同时在叶子节点添加相应的渠道名称
-    :param host:
-    :param port:
-    :param user:
-    :param password:
-    :param db:
-    :param charset:
-    :return:
-    """
 
-    ci_channel = pymysql.connect(host=host, port=port, user=user,
-                                 password=password, db=db,
-                                 charset=charset,
-
-                                 cursorclass=pymysql.cursors.SSDictCursor)
-    # 获取叶子节点和对应的渠道名称
-    channel_name = {}
-    with ci_channel.cursor() as cursor:
-        sql_channel_name = """
-          SELECT t4.catname,
-        t7.title
-        from 
-        (SELECT catname,id ,parentid from wx_category where taxonomy='marketing_channel'  and child=0) t4
-        LEFT JOIN 
-          ( SELECT term_id, post_id, post_type FROM wx_category_posts WHERE post_type = 'marketing_channel' ) t6
-          ON t4.id = t6.term_id
-          LEFT JOIN ( SELECT id, title, product_id FROM wx_marketing_channel ) t7 ON t6.post_id = t7.id;
-                
-        """
-        # print(sql_channel_name)
-        cursor.execute(sql_channel_name)
-        record_list = cursor.fetchall()
-        for record in record_list:
-            channel_name[record["catname"]] = record["title"]
-
-    channel_level = {}
-    with ci_channel.cursor() as cursor:
-        sql_channel_level = """
-          SELECT
-          -- t1.id, 
-          t1.catname as channel_1,
-          -- t2.id,
-          -- t2.parentid,
-          t2.catname as channel_2,
-          -- t3.id, 
-          -- t3.parentid, 
-          t3.catname as channel_3
-
-          from 
-          (SELECT id,catname from wx_category where taxonomy='marketing_channel' and parentid=0) t1
-           left join 
-          (SELECT catname,id ,parentid from wx_category where taxonomy='marketing_channel' and parentid in (SELECT id from wx_category where taxonomy='marketing_channel' and parentid=0)) t2 
-          on t1.id = t2.parentid
-          LEFT JOIN
-          (select t4.id,t4.parentid,t4.catname from 
-          (SELECT catname,id ,parentid from wx_category where taxonomy='marketing_channel'  and child=0) t4  
-          inner JOIN
-          (SELECT catname,id ,parentid from wx_category where taxonomy='marketing_channel' and parentid in (SELECT id from wx_category where taxonomy='marketing_channel' and parentid=0)) t5  
-          on t5.id = t4.parentid) t3
-          on t2.id = t3.parentid;
-        """
-        # print(sql_channel_level)
-        cursor.execute(sql_channel_level)
-        record_list = cursor.fetchall()
-        # print(record_list)
-
-        # 遍历生成一级和二级渠道分类
-        for id, record in enumerate(record_list):
-            channel_list = [v for k, v in record.items()]
-            # print(id,'->',channel_list)
-            channel_0, channel_1, channel_2 = channel_list
-            if channel_0 in channel_level.keys():
-                tmp = channel_level[channel_0]
-                if channel_1 in tmp:
-                    continue
-                else:
-                    tmp.append(channel_1)
-                channel_level[channel_0] = tmp
-            else:
-                channel_level[channel_0] = [channel_1]
-
-        for k, v in channel_level.items():
-            map_v = dict(zip(v, [{} for _ in range(len(v))]))
-            channel_level[k] = map_v
-        # #遍历生成三级渠道分类信息，同时添加渠道名称到叶子节点，前端勾选一级，二级，三级渠道分类时，可以选取相应的叶子节点的渠道名称：
-        for id, record in enumerate(record_list):
-            channel_list = [v for k, v in record.items()]
-            # print(id,'->',channel_list)
-            channel_0, channel_1, channel_2 = channel_list
-            if channel_2:
-                channel_level[channel_0][channel_1][channel_2] = channel_name[
-                    channel_2]
-            else:
-                channel_level[channel_0][channel_1] = channel_name[channel_1]
-
-    return channel_level
-
-
-level = ci_channel_info(host=channel_host, port=channel_port,
+_, level = channel_options.ci_channel_info(host=channel_host, port=channel_port,
                         user=channel_user, password=channel_password,
                         db=channel_db)
 option["channel"] = level
