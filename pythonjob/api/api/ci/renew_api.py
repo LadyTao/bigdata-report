@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
+
 sys.path.append('..')
 sys.path.append('.')
 from flask import current_app as app
 from pprintpp import pprint as pp
-from flask import request, jsonify,make_response, stream_with_context, Response
+from flask import request, jsonify, make_response, stream_with_context, Response
 import os
 import settings
 import json
@@ -15,20 +16,141 @@ from flasgger import swag_from
 import pymysql.cursors
 
 import settings
+
 host = settings.renew_mysql_host
 port = settings.renew_mysql_port
-user=  settings.renew_mysql_user
+user = settings.renew_mysql_user
 password = settings.renew_mysql_password
-#db = 'data_sale'
+# db = 'data_sale'
 db = settings.renew_mysql_db
 
 renew_api = Blueprint('renew_api', __name__)
 es_host = settings.es_host
- 
-options = {
-        "channel": ["百度推广","胡萝卜周","易企传","搜狗推广","360推广","BD通用","BD-XL","BD-JJDS","baidu-mobile","BD-KSJKH","baidu-zhishi","baidu-pcinfo","麦本本","BD电商活动","赢商荟","智适应","bili","BZdownload","依凰蓝盾","常乐九九","栗子摄影器材","连锁正品店","BZdownload2","广点通推广","优设网","齐论电商","金山毒霸","腾讯管家","360管家","深圳高级中学","搜狗WAP注册","360WAP注册","神马WAP注册","10天试用-电商组自媒体","百度搜索推广WAP端","高校拓展","搜狗WAP下载","BD官网","BD-视达","神剪手BD微信社群新注册用户5天VIP","今日头条IOS","神剪手BD-QQ群李栋推广","百度搜索品牌推广PC端","微博红人推广（app）"],
+
+option = {
+    "channel": ["百度推广", "胡萝卜周", "易企传", "搜狗推广", "360推广", "BD通用", "BD-XL",
+                "BD-JJDS", "baidu-mobile", "BD-KSJKH", "baidu-zhishi",
+                "baidu-pcinfo", "麦本本", "BD电商活动", "赢商荟", "智适应", "bili",
+                "BZdownload", "依凰蓝盾", "常乐九九", "栗子摄影器材", "连锁正品店", "BZdownload2",
+                "广点通推广", "优设网", "齐论电商", "金山毒霸", "腾讯管家", "360管家", "深圳高级中学",
+                "搜狗WAP注册", "360WAP注册", "神马WAP注册", "10天试用-电商组自媒体", "百度搜索推广WAP端",
+                "高校拓展", "搜狗WAP下载", "BD官网", "BD-视达", "神剪手BD微信社群新注册用户5天VIP",
+                "今日头条IOS", "神剪手BD-QQ群李栋推广", "百度搜索品牌推广PC端", "微博红人推广（app）"],
     "expire_plan": ["月付", "年付"]
 }
+
+channel_host = settings.ci_channel_host
+channel_port = settings.ci_channel_port
+channel_user = settings.ci_channel_user
+channel_password = settings.ci_channel_password
+channel_db = settings.ci_channel_db
+
+
+def ci_channel_info(host, port, user, password, db, charset='utf8mb4'):
+    """
+    用于获取神剪手后台数据库的渠道分类信息，同时在叶子节点添加相应的渠道名称
+    :param host:
+    :param port:
+    :param user:
+    :param password:
+    :param db:
+    :param charset:
+    :return:
+    """
+
+    ci_channel = pymysql.connect(host=host, port=port, user=user,
+                                 password=password, db=db,
+                                 charset=charset,
+
+                                 cursorclass=pymysql.cursors.SSDictCursor)
+    # 获取叶子节点和对应的渠道名称
+    channel_name = {}
+    with ci_channel.cursor() as cursor:
+        sql_channel_name = """
+          SELECT t4.catname,
+        t7.title
+        from 
+        (SELECT catname,id ,parentid from wx_category where taxonomy='marketing_channel'  and child=0) t4
+        LEFT JOIN 
+          ( SELECT term_id, post_id, post_type FROM wx_category_posts WHERE post_type = 'marketing_channel' ) t6
+          ON t4.id = t6.term_id
+          LEFT JOIN ( SELECT id, title, product_id FROM wx_marketing_channel ) t7 ON t6.post_id = t7.id;
+                
+        """
+        # print(sql_channel_name)
+        cursor.execute(sql_channel_name)
+        record_list = cursor.fetchall()
+        for record in record_list:
+            channel_name[record["catname"]] = record["title"]
+
+    channel_level = {}
+    with ci_channel.cursor() as cursor:
+        sql_channel_level = """
+          SELECT
+          -- t1.id, 
+          t1.catname as channel_1,
+          -- t2.id,
+          -- t2.parentid,
+          t2.catname as channel_2,
+          -- t3.id, 
+          -- t3.parentid, 
+          t3.catname as channel_3
+
+          from 
+          (SELECT id,catname from wx_category where taxonomy='marketing_channel' and parentid=0) t1
+           left join 
+          (SELECT catname,id ,parentid from wx_category where taxonomy='marketing_channel' and parentid in (SELECT id from wx_category where taxonomy='marketing_channel' and parentid=0)) t2 
+          on t1.id = t2.parentid
+          LEFT JOIN
+          (select t4.id,t4.parentid,t4.catname from 
+          (SELECT catname,id ,parentid from wx_category where taxonomy='marketing_channel'  and child=0) t4  
+          inner JOIN
+          (SELECT catname,id ,parentid from wx_category where taxonomy='marketing_channel' and parentid in (SELECT id from wx_category where taxonomy='marketing_channel' and parentid=0)) t5  
+          on t5.id = t4.parentid) t3
+          on t2.id = t3.parentid;
+        """
+        # print(sql_channel_level)
+        cursor.execute(sql_channel_level)
+        record_list = cursor.fetchall()
+        # print(record_list)
+
+        # 遍历生成一级和二级渠道分类
+        for id, record in enumerate(record_list):
+            channel_list = [v for k, v in record.items()]
+            # print(id,'->',channel_list)
+            channel_0, channel_1, channel_2 = channel_list
+            if channel_0 in channel_level.keys():
+                tmp = channel_level[channel_0]
+                if channel_1 in tmp:
+                    continue
+                else:
+                    tmp.append(channel_1)
+                channel_level[channel_0] = tmp
+            else:
+                channel_level[channel_0] = [channel_1]
+
+        for k, v in channel_level.items():
+            map_v = dict(zip(v, [{} for _ in range(len(v))]))
+            channel_level[k] = map_v
+        # #遍历生成三级渠道分类信息，同时添加渠道名称到叶子节点，前端勾选一级，二级，三级渠道分类时，可以选取相应的叶子节点的渠道名称：
+        for id, record in enumerate(record_list):
+            channel_list = [v for k, v in record.items()]
+            # print(id,'->',channel_list)
+            channel_0, channel_1, channel_2 = channel_list
+            if channel_2:
+                channel_level[channel_0][channel_1][channel_2] = channel_name[
+                    channel_2]
+            else:
+                channel_level[channel_0][channel_1] = channel_name[channel_1]
+
+    return channel_level
+
+
+level = ci_channel_info(host=channel_host, port=channel_port,
+                        user=channel_user, password=channel_password,
+                        db=channel_db)
+option["channel"] = level
+options = option
 
 
 def parse_query_obj(q_obj):
@@ -37,8 +159,9 @@ def parse_query_obj(q_obj):
     q_obj['channel'] = q_obj.get("channel", ','.join(options['channel']))
     q_obj['channel'] = "','".join(q_obj['channel'].split(","))
     q_obj['subtype'] = q_obj.get("subtype", "month")
-    q_obj['intv'] = q_obj.get("intv", "1d") #1M
-    q_obj['same_type'] = False if q_obj.get("same_type", 'false')=="false" else True
+    q_obj['intv'] = q_obj.get("intv", "1d")  # 1M
+    q_obj['same_type'] = False if q_obj.get("same_type",
+                                            'false') == "false" else True
     q_obj['page'] = int(q_obj.get("page", '1'))
     q_obj['size'] = int(q_obj.get("size", '200000'))
     return q_obj
@@ -98,54 +221,61 @@ def gen_sql(q_obj):
        on temp.stat_intv = ci.stat_intv 
        LIMIT __PAGE_START__, __PAGE_SIZE__ 
     """
-    intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
+    intv_field = "stat_date" if q_obj[
+                                    'intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
     if q_obj['same_type']:
-        total_renew_user =  "sum(case when expire_user_level=renew_user_level and expire_time_type=renew_time_type then renew_user else 0 end)"
+        total_renew_user = "sum(case when expire_user_level=renew_user_level and expire_time_type=renew_time_type then renew_user else 0 end)"
     else:
         total_renew_user = "sum(renew_user)"
-    same_padding = "and expire_user_level=renew_user_level and expire_time_type=renew_time_type" if q_obj['same_type'] else ''
+    same_padding = "and expire_user_level=renew_user_level and expire_time_type=renew_time_type" if \
+    q_obj['same_type'] else ''
 
-    sql = sql.replace("__INTV_FIELD__", intv_field)\
-             .replace("__CHANNEL_LIST___", q_obj['channel'])\
-             .replace("__EXPIRE_TYPE__", q_obj['expire_time_type'])\
-	     .replace(" __TOTAL_RENEW_USER__", total_renew_user)\
-             .replace("__SAME_PADDING__", same_padding)\
-             .replace("__START__", q_obj['start'])\
-             .replace("__END__", q_obj['end'])\
-             .replace("__PAGE_START__", str((q_obj['page']-1)))\
-             .replace("__PAGE_SIZE__", str(q_obj['size']))
-     
-    return sql   
+    sql = sql.replace("__INTV_FIELD__", intv_field) \
+        .replace("__CHANNEL_LIST___", q_obj['channel']) \
+        .replace("__EXPIRE_TYPE__", q_obj['expire_time_type']) \
+        .replace(" __TOTAL_RENEW_USER__", total_renew_user) \
+        .replace("__SAME_PADDING__", same_padding) \
+        .replace("__START__", q_obj['start']) \
+        .replace("__END__", q_obj['end']) \
+        .replace("__PAGE_START__", str((q_obj['page'] - 1))) \
+        .replace("__PAGE_SIZE__", str(q_obj['size']))
+
+    return sql
+
 
 def query_retention_data(sql_query, q_obj):
-    ci_mysql = pymysql.connect(host=host, port=port, user=user, password=password, db=db, charset='utf8mb4', cursorclass=pymysql.cursors.SSDictCursor)
+    ci_mysql = pymysql.connect(host=host, port=port, user=user,
+                               password=password, db=db, charset='utf8mb4',
+                               cursorclass=pymysql.cursors.SSDictCursor)
 
     result = []
     with ci_mysql.cursor() as cursor:
 
         cursor.execute(sql_query)
         record_list = cursor.fetchall()
-        
+
         for record in record_list:
             data = {
-               "time": record['stat_intv'],
-               "buckets":[]} 
+                "time": record['stat_intv'],
+                "buckets": []}
             # stat_inv, total_renew_user, ....
             dim_col_map = {
-              '企業': 'enter', 'VIP': 'vip', '高级': 'senior', '总': 'total'
+                '企業': 'enter', 'VIP': 'vip', '高级': 'senior', '总': 'total'
             }
             for dim, col in dim_col_map.items():
-                user_col, rate_col = '%s_renew_user'%col, '%s_renew_rate'%col
+                user_col, rate_col = '%s_renew_user' % col, '%s_renew_rate' % col
                 bucket = {
-                  'dim': dim+"会员", 
-                  'renew_user': int(record[user_col]) if record[user_col] else 0,
-                  'renew_rate': float(record[rate_col]) if record[rate_col] else 0
+                    'dim': dim + "会员",
+                    'renew_user': int(record[user_col]) if record[
+                        user_col] else 0,
+                    'renew_rate': float(record[rate_col]) if record[
+                        rate_col] else 0
                 }
                 data['buckets'].append(bucket)
             result.append(data)
     ci_mysql.close()
     return result
- 
+
 
 def get_dim_statistics_list(graph_plot_list):
     result = []
@@ -167,7 +297,7 @@ def get_dim_statistics_list(graph_plot_list):
 def ci_retention_graph():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    sql_query = gen_sql(q_obj)  
+    sql_query = gen_sql(q_obj)
     print(sql_query)
     date_histograms = query_retention_data(sql_query, q_obj)
     return jsonify(date_histograms)
@@ -178,12 +308,13 @@ def ci_retention_graph():
 def ci_retention_table():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    sql_query = gen_sql(q_obj)  
+    sql_query = gen_sql(q_obj)
     date_histograms = query_retention_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
 
     paged_list = []
-    start_idx, end_idx = q_obj['size']*(q_obj['page']-1), q_obj['size']*q_obj['page']
+    start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
+                         q_obj['page']
     for idx, dim_statistics in enumerate(dim_statistics_list):
         if start_idx <= idx < end_idx:
             paged_list.append(dim_statistics)
@@ -199,19 +330,23 @@ def ci_retention_table():
 def ci_retention_csv():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    sql_query = gen_sql(q_obj)  
+    sql_query = gen_sql(q_obj)
     date_histograms = query_retention_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
 
-    key_list = ["时间","总会员续费数","总会员续费率","高级会员续费数","高级会员续费率","VIP会员续费数","VIP会员续费率"]
+    key_list = ["时间", "总会员续费数", "总会员续费率", "高级会员续费数", "高级会员续费率", "VIP会员续费数",
+                "VIP会员续费率"]
+
     def dict_to_str(dim_statistics_list):
         import codecs
         yield codecs.BOM_UTF8
-        yield ",".join(key_list)+"\n"
+        yield ",".join(key_list) + "\n"
         for dim_statistics in dim_statistics_list:
-            dim_statistics_str = ",".join([str(dim_statistics[key]) for key in key_list]) + "\n"
+            dim_statistics_str = ",".join(
+                [str(dim_statistics[key]) for key in key_list]) + "\n"
             yield dim_statistics_str
-    return Response(dict_to_str(dim_statistics_list),  mimetype='text/csv')
+
+    return Response(dict_to_str(dim_statistics_list), mimetype='text/csv')
 
 
 @renew_api.route("/ci_retention_pie_chart", methods=['GET'])
@@ -219,12 +354,14 @@ def ci_retention_csv():
 def ci_retention_piechart():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    ci_mysql = pymysql.connect(host=host, port=port, user=user, password=password, db=db, 
-                               charset='utf8mb4', cursorclass=pymysql.cursors.SSDictCursor)
+    ci_mysql = pymysql.connect(host=host, port=port, user=user,
+                               password=password, db=db,
+                               charset='utf8mb4',
+                               cursorclass=pymysql.cursors.SSDictCursor)
 
     result = []
     with ci_mysql.cursor() as cursor:
-        sql  = """
+        sql = """
             select __INTV_FIELD__ as stat_intv,
             renew_time_type, renew_user_level, sum(renew_user) as renew_user_counts
 	    from ci_member_renew_rate_day
@@ -235,20 +372,22 @@ def ci_retention_piechart():
             __AND__SAME_TYPE__ group by stat_intv, renew_user_level, renew_time_type
         """
 
-        intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
+        intv_field = "stat_date" if q_obj[
+                                        'intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
         if q_obj['expire_user_level'] == "总会员":
-            expire_user_level =  "in ('高级会员','VIP会员','企业会员')"
+            expire_user_level = "in ('高级会员','VIP会员','企业会员')"
         else:
-            expire_user_level = "='%s'" %q_obj['expire_user_level']
-        and_same_type = ' AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if q_obj['same_type'] else ''
-        sql_query = sql.replace("__INTV_FIELD__", intv_field)\
-                 .replace("__CHANNEL_LIST___", q_obj['channel'])\
-                 .replace("__EXPIRE_TYPE__", q_obj['expire_time_type'])\
-                 .replace("__AND__SAME_TYPE__", and_same_type)\
-                 .replace("__START__", q_obj['start'])\
-                 .replace("__END__", q_obj['end'])\
-                 .replace("__USER_LEVEL__", expire_user_level)\
-                 .replace("__PIE_TIME__", q_obj['pie_time'])
+            expire_user_level = "='%s'" % q_obj['expire_user_level']
+        and_same_type = ' AND expire_user_level=renew_user_level AND expire_time_type=renew_time_type ' if \
+        q_obj['same_type'] else ''
+        sql_query = sql.replace("__INTV_FIELD__", intv_field) \
+            .replace("__CHANNEL_LIST___", q_obj['channel']) \
+            .replace("__EXPIRE_TYPE__", q_obj['expire_time_type']) \
+            .replace("__AND__SAME_TYPE__", and_same_type) \
+            .replace("__START__", q_obj['start']) \
+            .replace("__END__", q_obj['end']) \
+            .replace("__USER_LEVEL__", expire_user_level) \
+            .replace("__PIE_TIME__", q_obj['pie_time'])
         print(sql_query)
         cursor.execute(sql_query)
         record_list = cursor.fetchall()
@@ -276,19 +415,24 @@ def ci_retention_piechart():
             center_key, circle_key = 'renew_time_type', 'renew_user_level'
         else:
             center_key, circle_key = 'renew_user_level', 'renew_time_type'
-        base_map = {}  
+        base_map = {}
         total = 0
         for record in record_list:
             renew_user_counts = int(record['renew_user_counts'])
             total += renew_user_counts
             center_value, circle_value = record[center_key], record[circle_key]
-            #print(record['renew_time_type'], record['renew_user_level'], record['renew_user_counts'], record['stat_intv'], total)
+            # print(record['renew_time_type'], record['renew_user_level'], record['renew_user_counts'], record['stat_intv'], total)
             if center_value not in base_map:
-                base_map[center_value] = {'counts':0, 'title': center_value, 'time': record['stat_intv'], 'buckets':{}}
-            if circle_value  not in base_map[center_value]['buckets']:
-                base_map[center_value]['buckets'][circle_value] = {'counts':0, 'percent':0, 'title': center_value+"-"+circle_value}
+                base_map[center_value] = {'counts': 0, 'title': center_value,
+                                          'time': record['stat_intv'],
+                                          'buckets': {}}
+            if circle_value not in base_map[center_value]['buckets']:
+                base_map[center_value]['buckets'][circle_value] = {'counts': 0,
+                                                                   'percent': 0,
+                                                                   'title': center_value + "-" + circle_value}
             base_map[center_value]['counts'] += renew_user_counts
-            base_map[center_value]['buckets'][circle_value]['counts'] += renew_user_counts
+            base_map[center_value]['buckets'][circle_value][
+                'counts'] += renew_user_counts
         for center_value, center_map in base_map.items():
             for circle_value, circle_map in center_map['buckets'].items():
                 circle_map['percent'] = round(circle_map['counts'] / total, 3)
