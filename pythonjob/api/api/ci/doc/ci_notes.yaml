@@ -1,0 +1,14 @@
+CI看板注释接口
+传入注释参数：note_id,返回相应的注释信息（note_info）
+---
+parameters:
+   - name: note_id
+     in: query
+     type: string
+     default: "1"
+     description: 注释编号
+     required: true
+
+responses:
+   200:
+        description: 返回相应的注释信息note_info json字符串
