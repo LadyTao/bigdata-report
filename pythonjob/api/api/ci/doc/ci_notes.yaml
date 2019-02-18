@@ -6,7 +6,7 @@ parameters:
      in: query
      type: string
      default: "1"
-     description: 注释编号
+     description: 注释编号,对应数据看板的id,如:VP订单销售情况表:0,CI订单销售情况表:1,CI会员续费情况表:2.
      required: true
 
 responses:
