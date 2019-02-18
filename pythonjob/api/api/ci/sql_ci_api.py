@@ -380,5 +380,5 @@ def ci_notes():
         cursor.execute(query)
         record_list = cursor.fetchall()
         result = eval(record_list[0]["note_info"])
-        print("tyep of result:",type(result))
+        #print("tyep of result:",type(result))
     return jsonify(result)
