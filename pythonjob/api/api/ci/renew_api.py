@@ -122,8 +122,8 @@ def gen_sql(q_obj):
            order by stat_intv)
        as ci 
        on temp.stat_intv = ci.stat_intv 
-       LIMIT __PAGE_START__, __PAGE_SIZE__ 
     """
+    #LIMIT __PAGE_START__, __PAGE_SIZE__ 
     intv_field = "stat_date" if q_obj[
                                     'intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
     if q_obj['same_type']:
@@ -139,9 +139,9 @@ def gen_sql(q_obj):
         .replace(" __TOTAL_RENEW_USER__", total_renew_user) \
         .replace("__SAME_PADDING__", same_padding) \
         .replace("__START__", q_obj['start']) \
-        .replace("__END__", q_obj['end']) \
-        .replace("__PAGE_START__", str((q_obj['page'] - 1))) \
-        .replace("__PAGE_SIZE__", str(q_obj['size']))
+        .replace("__END__", q_obj['end']) 
+        #.replace("__PAGE_START__", str((q_obj['page'] - 1))) \
+        #.replace("__PAGE_SIZE__", str(q_obj['size']))
 
     return sql
 
