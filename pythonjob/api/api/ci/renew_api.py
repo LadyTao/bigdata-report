@@ -270,7 +270,7 @@ def ci_retention_piechart():
             renew_time_type, renew_user_level, sum(renew_user) as renew_user_counts
 	    from ci_member_renew_rate_day
 	    where channel in ('__CHANNEL_LIST___') AND expire_time_type='__EXPIRE_TYPE__' 
-            AND stat_date>='__PIE_TIME__'
+            AND stat_date='__PIE_TIME__'
             AND renew_user > 0 
             AND expire_user_level __USER_LEVEL__  
             __AND__SAME_TYPE__ group by stat_intv, renew_user_level, renew_time_type
