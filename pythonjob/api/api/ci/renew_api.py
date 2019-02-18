@@ -57,7 +57,9 @@ options = option
 def parse_query_obj(q_obj):
     q_obj['start'] = q_obj.get("start", "2018-12-01")
     q_obj['end'] = q_obj.get("end", "2019-01-31")
-    q_obj['channel'] = q_obj.get("channel", ','.join(channel_name.values()))
+    print("----")
+    channel_option = [_ for _ in  list(channel_name.values()) if _]
+    q_obj['channel'] = q_obj.get("channel", ','.join(channel_option))
     q_obj['channel'] = "','".join(q_obj['channel'].split(","))
     q_obj['subtype'] = q_obj.get("subtype", "month")
     q_obj['intv'] = q_obj.get("intv", "1d")  # 1M
@@ -198,6 +200,7 @@ def get_dim_statistics_list(graph_plot_list):
 def ci_retention_graph():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
+    q_obj['size'] = 99999
     sql_query = gen_sql(q_obj)
     print(sql_query)
     date_histograms = query_retention_data(sql_query, q_obj)
