@@ -50,11 +50,10 @@ channel_user = settings.ci_channel_user
 channel_password = settings.ci_channel_password
 channel_db = settings.ci_channel_db
 
-
-
 _, level = channel_options.ci_channel_info(host=channel_host, port=channel_port,
-                        user=channel_user, password=channel_password,
-                        db=channel_db)
+                                           user=channel_user,
+                                           password=channel_password,
+                                           db=channel_db)
 option["channel"] = level
 options = option
 print("options:", options)
@@ -380,5 +379,6 @@ def ci_notes():
         # print(query)
         cursor.execute(query)
         record_list = cursor.fetchall()
-        result = record_list[0]["note_info"]
+        result = eval(record_list[0]["note_info"])
+        print("tyep of result:",type(result))
     return jsonify(result)
