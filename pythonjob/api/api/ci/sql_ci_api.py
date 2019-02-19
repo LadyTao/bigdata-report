@@ -345,9 +345,9 @@ def ci_sales_compare():
     return jsonify(result)
 
 
-@ci_api.route("/ci_notes", methods=['GET'])
-@swag_from('doc/ci_notes.yaml')
-def ci_notes():
+@ci_api.route("/board_notes", methods=['GET'])
+@swag_from('doc/board_notes.yaml')
+def board_notes():
     """
     :param note_id: default:1
     :return:  note_info:json字符串

@@ -1,5 +1,7 @@
 import pymysql
 import json
+
+
 def ci_channel_info(host, port, user, password, db, charset='utf8mb4'):
     """
     用于获取神剪手后台数据库的渠道分类信息，同时在叶子节点添加相应的渠道名称
@@ -69,16 +71,17 @@ def ci_channel_info(host, port, user, password, db, charset='utf8mb4'):
         # print(record_list)
         from collections import defaultdict
         channel_level = defaultdict(
-                lambda: defaultdict(  #lv1
-                        lambda: defaultdict( #lv2
-                                lambda: defaultdict(dict)))) #lv3
+            lambda: defaultdict(  # lv1
+                lambda: defaultdict(  # lv2
+                    lambda: defaultdict(dict))))  # lv3
         for id, record in enumerate(record_list):
-            lv1, lv2, lv3 = record['channel_1'], record['channel_2'], record['channel_3']
+            lv1, lv2, lv3 = record['channel_1'], record['channel_2'], record[
+                'channel_3']
             if lv3 is not None:
                 channel_level[lv1][lv2][lv3] = channel_name[lv3]
             if lv3 is None:
                 channel_level[lv1][lv2] = channel_name[lv2]
-        channel_level = json.loads(json.dumps(channel_level,  ensure_ascii=False))
+        channel_level["其他"] = 'missing'
+        channel_level = json.loads(
+            json.dumps(channel_level, ensure_ascii=False))
     return channel_name, channel_level
-
-
