@@ -1,0 +1,43 @@
+终端概述 指标数据接口
+传入查询相关条件，返回制定条件的终端设备活跃数据
+---
+parameters:
+   - name: start
+     in: query
+     type: string
+     default: "2019-04-02"
+     description: 查询开始时间
+     required: true
+   - name: end
+     in: query
+     type: string
+     default: "2019-04-04"
+     description: 查询结束时间
+     required: true
+   - name: dim
+     in: query
+     type: string
+     required: false
+     description: 对比维度
+   - name: intv
+     in: query
+     type: string
+     required: true
+     enum: [1d, 1w, 1M]
+     default: 1d
+     description: 数据聚合时间周期
+   - name: condition
+     in: query
+     type: string
+     description: 选取查询的字段为key，条件为数值（超过一个以数组表达）。json string 格式：  {"dev_type":["mac","win"],"app_version":["9.0.1.0","10.0"]}
+   - name: size
+     in: query
+     type: int
+
+   - name: page
+     in: query
+     type: int
+
+responses:
+   200:
+        description: 返回各个平台或者版本号的活跃设备数（统计周期、活跃数）
