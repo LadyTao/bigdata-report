@@ -9,7 +9,8 @@ from flask import current_app as app
 from pprintpp import pprint as pp
 from flask import request, jsonify, make_response, stream_with_context, Response
 import os
-import settings
+
+
 import json
 
 from flask import Blueprint, render_template
