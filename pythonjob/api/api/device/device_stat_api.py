@@ -101,24 +101,22 @@ def get_device_data(sql_str, q_obj):
                                    db=db,
                                    port=port)
 
-
-
-        # for record in record_list:
-        #     intv = "%sT00:00:00.000+08:00" % record['intv']
-        #     if intv not in time_buckets_map:
-        #         time_buckets_map[intv] = {"time": intv, "buckets": []}
-        #     dim = intv if q_obj["dim"] == "inputtime" else record["dim"]
-        #     time_buckets_map[intv]["buckets"].append(
-        #         {"dim": dim,
-        #          "": record["amount"],
-        #          "origin_amount": record["origin_amount"],
-        #          "order_counts": record["order_counts"],
-        #          "user_counts": record["user_counts"]})
-        # result = [v for k, v in time_buckets_map.items()]
-        #
-        #
-        # col_name =['show_date',q_obj['dim'],'total_amount']
-        # result = pd.DataFrame(list(record_list),columns= col_name).to_json()
+    # for record in record_list:
+    #     intv = "%sT00:00:00.000+08:00" % record['intv']
+    #     if intv not in time_buckets_map:
+    #         time_buckets_map[intv] = {"time": intv, "buckets": []}
+    #     dim = intv if q_obj["dim"] == "inputtime" else record["dim"]
+    #     time_buckets_map[intv]["buckets"].append(
+    #         {"dim": dim,
+    #          "": record["amount"],
+    #          "origin_amount": record["origin_amount"],
+    #          "order_counts": record["order_counts"],
+    #          "user_counts": record["user_counts"]})
+    # result = [v for k, v in time_buckets_map.items()]
+    #
+    #
+    # col_name =['show_date',q_obj['dim'],'total_amount']
+    # result = pd.DataFrame(list(record_list),columns= col_name).to_json()
 
     # return result
 
@@ -142,7 +140,7 @@ def device_active():
     FROM  __TABLE_NAME__
     where 	stat_date  BETWEEN '__START__' AND '__END__' 
     __CONDITIONS__ 
-    GROUP BY	__DIM__;
+    GROUP BY	__DIM__  having  sum( increase )  >10 ;
     """
     sql = gen_sql(sql=sql_str, q_obj=q_obj)
     if q_obj['intv'] == '1d':
@@ -164,23 +162,41 @@ def device_active():
                                    db=db,
                                    port=port)
 
-
     with device_mysql.cursor() as cursor:
         print("sql_query in get data:", sql)
         cursor.execute(sql)
         record_list = cursor.fetchall()
         print(record_list)
 
-        result = []
+        final_result = []
         for idx, record in enumerate(record_list):
-            print("idx:",idx,'-->record',record)
-            record_map={}
-
+            print("idx:", idx, '-->record', record)
+            record_map = {}
 
             record_map[q_obj['dim']] = record[0]
             record_map['total_amount'] = int(record[1])
             print("record_tmp:", record_map)
-            result.append(record_map)
+            final_result.append(record_map)
+
+    # 当所选维度是日期时，针对日期排序，实现最近日期的数据显示在分页的靠前页面
+    print("un_sorted_final_result:",final_result)
+    if 'stat_date' in final_result[0].keys():
+        print("begin to sort the result:")
+        final_result = sorted(final_result,key = lambda e:e['stat_date'],reverse = True)
+        print("sorted_final_result:",final_result)
+
+
+    #添加数据分页功能
+    paged_list = []
+    start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
+                         q_obj['page']
+    for idx, result_one in enumerate(final_result):
+        if start_idx <= idx < end_idx:
+            paged_list.append(result_one)
+    result = {
+        'total': len(final_result),
+        'result': paged_list
+    }
     return jsonify(result)
 
 
@@ -197,7 +213,7 @@ def device_increase():
         FROM  __TABLE_NAME__
         where 	stat_date  BETWEEN '__START__' AND '__END__' 
         __CONDITIONS__ 
-        GROUP BY 	__DIM__;
+        GROUP BY 	__DIM__  having  sum( increase )  >10 ;
         """
     sql = gen_sql(sql=sql_str, q_obj=q_obj)
     if q_obj['intv'] == '1d':
@@ -219,6 +235,80 @@ def device_increase():
                                    db=db,
                                    port=port)
 
+    with device_mysql.cursor() as cursor:
+        print("sql_query in get data:", sql)
+        cursor.execute(sql)
+        record_list = cursor.fetchall()
+        print(record_list)
+
+        final_result = []
+        for idx, record in enumerate(record_list):
+            print("idx:", idx, '-->record', record)
+            record_map = {}
+
+            record_map[q_obj['dim']] = record[0]
+            record_map['total_amount'] = int(record[1])
+            print("record_tmp:", record_map)
+            final_result.append(record_map)
+
+    # 当所选维度是日期时，针对日期排序，实现最近日期的数据显示在分页的靠前页面
+    print("un_sorted_final_result:",final_result)
+    if 'stat_date' in final_result[0].keys():
+        print("begin to sort the result:")
+        final_result = sorted(final_result,key = lambda e:e['stat_date'],reverse = True)
+        print("sorted_final_result:",final_result)
+
+
+    #添加数据分页功能
+    paged_list = []
+    start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
+                         q_obj['page']
+    for idx, result_one in enumerate(final_result):
+        if start_idx <= idx < end_idx:
+            paged_list.append(result_one)
+    result = {
+        'total': len(final_result),
+        'result': paged_list
+    }
+    return jsonify(result)
+    return jsonify(result)
+
+
+@device_api.route("/device_increase_graph", methods=['GET'])
+@swag_from('doc/device_increase_graph.yaml')
+def device_increase_graph():
+    q_obj = request.args.to_dict()
+    q_obj = parse_query_obj(q_obj)
+
+    sql_str = """
+        SELECT
+        stat_date,
+        __DIM__ ,
+        sum( increase ) 
+        FROM  __TABLE_NAME__
+        where 	stat_date  BETWEEN '__START__' AND '__END__' 
+        __CONDITIONS__ 
+        GROUP BY stat_date, __DIM__  having  sum( increase )  >10 ;
+        """
+    sql = gen_sql(sql=sql_str, q_obj=q_obj)
+    if q_obj['intv'] == '1d':
+        sql = sql.replace('__TABLE_NAME__', 'device_increase_day')
+    elif q_obj['intv'] == '1w':
+        sql = sql.replace('__TABLE_NAME__', 'device_increase_week')
+    else:
+        sql = sql.replace('__TABLE_NAME__', 'device_increase_month')
+    print("increase sql:", sql)
+
+    host = settings.device_host
+    port = settings.device_port
+    user = settings.device_user
+    password = settings.device_password
+    db = 'data_user'
+    device_mysql = pymysql.connect(host=host,
+                                   user=user,
+                                   password=password,
+                                   db=db,
+                                   port=port)
 
     with device_mysql.cursor() as cursor:
         print("sql_query in get data:", sql)
@@ -226,19 +316,77 @@ def device_increase():
         record_list = cursor.fetchall()
         print(record_list)
 
-        result = []
-        for idx, record in enumerate(record_list):
-            print("idx:",idx,'-->record',record)
-            record_map={}
+        record_map = collections.OrderedDict()
 
-
-            record_map[q_obj['dim']] = record[0]
-            record_map['total_amount'] = int(record[1])
-            print("record_tmp:", record_map)
-            result.append(record_map)
+        for record in record_list:
+            if record[0] not in record_map:
+                record_map[record[0]] = {"time": record[0], "buckets": []}
+            record_map[record[0]]["buckets"].append({
+                "dim": record[1],
+                "total_amount": int(record[2])
+            })
+        print("record_map:",record_map)
+        result = [v for k, v in record_map.items()]
+        print("result:",result)
     return jsonify(result)
 
 
+@device_api.route("/device_active_graph", methods=['GET'])
+@swag_from('doc/device_active_graph.yaml')
+def device_active_graph():
+    q_obj = request.args.to_dict()
+    q_obj = parse_query_obj(q_obj)
+
+    sql_str = """
+        SELECT
+        stat_date,
+        __DIM__ ,
+        sum( increase ) 
+        FROM  __TABLE_NAME__
+        where 	stat_date  BETWEEN '__START__' AND '__END__' 
+        __CONDITIONS__ 
+        GROUP BY stat_date, __DIM__  having  sum( increase )  >10 ;
+        """
+    sql = gen_sql(sql=sql_str, q_obj=q_obj)
+    if q_obj['intv'] == '1d':
+        sql = sql.replace('__TABLE_NAME__', 'device_active_day')
+    elif q_obj['intv'] == '1w':
+        sql = sql.replace('__TABLE_NAME__', 'device_active_week')
+    else:
+        sql = sql.replace('__TABLE_NAME__', 'device_active_month')
+    print("active  sql:", sql)
+
+    host = settings.device_host
+    port = settings.device_port
+    user = settings.device_user
+    password = settings.device_password
+    db = 'data_user'
+    device_mysql = pymysql.connect(host=host,
+                                   user=user,
+                                   password=password,
+                                   db=db,
+                                   port=port)
+
+    with device_mysql.cursor() as cursor:
+        print("sql_query in get data:", sql)
+        cursor.execute(sql)
+        record_list = cursor.fetchall()
+        print(record_list)
+
+        record_map = collections.OrderedDict()
+
+        for record in record_list:
+            if record[0] not in record_map:
+                record_map[record[0]] = {"time": record[0], "buckets": []}
+            record_map[record[0]]["buckets"].append({
+                "dim": record[1],
+                "total_amount": int(record[2])
+            })
+        print("record_map:",record_map)
+        result = [v for k, v in record_map.items()]
+        print("result:",result)
+
+    return jsonify(result)
 
 
 
@@ -255,7 +403,7 @@ def device_total():
         FROM  device_total_day
         where 	stat_date  BETWEEN '__START__' AND '__END__' 
         __CONDITIONS__ 
-        GROUP BY __DIM__;
+        GROUP BY __DIM__ HAVING sum( total_amount )  >10 ;
     """
     sql = gen_sql(sql=sql_str, q_obj=q_obj)
     print("total sql:", sql)
@@ -271,7 +419,6 @@ def device_total():
                                    db=db,
                                    port=port)
 
-
     with device_mysql.cursor() as cursor:
         print("sql_query in get data:", sql)
         cursor.execute(sql)
@@ -280,9 +427,8 @@ def device_total():
 
         result = []
         for idx, record in enumerate(record_list):
-            print("idx:",idx,'-->record',record)
-            record_map={}
-
+            print("idx:", idx, '-->record', record)
+            record_map = {}
 
             record_map[q_obj['dim']] = record[0]
 
