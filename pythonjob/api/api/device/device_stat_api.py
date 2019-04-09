@@ -11,16 +11,15 @@ from flask import request, jsonify, make_response, stream_with_context, Response
 import os
 import settings
 import json
-from elasticsearch import Elasticsearch
+
 from flask import Blueprint, render_template
 from flasgger import swag_from
-import pandas as pd
-import pandas as pd
-from sqlalchemy import create_engine
+
+
 
 device_api = Blueprint('device_api', __name__)
 
-from api.ci import channel_options
+
 import pymysql.cursors
 import settings
 
@@ -82,44 +81,6 @@ def gen_sql(sql, q_obj):
     sql = sql.replace("__DIM__", q_obj['dim'])
 
     return sql
-
-
-def get_device_data(sql_str, q_obj):
-    """
-
-    :param sql_str:
-    :return:
-    """
-    host = settings.device_host
-    port = settings.device_port
-    user = settings.device_user
-    password = settings.device_password
-    db = 'data_user'
-    device_mysql = pymysql.connect(host=host,
-                                   user=user,
-                                   password=password,
-                                   db=db,
-                                   port=port)
-
-    # for record in record_list:
-    #     intv = "%sT00:00:00.000+08:00" % record['intv']
-    #     if intv not in time_buckets_map:
-    #         time_buckets_map[intv] = {"time": intv, "buckets": []}
-    #     dim = intv if q_obj["dim"] == "inputtime" else record["dim"]
-    #     time_buckets_map[intv]["buckets"].append(
-    #         {"dim": dim,
-    #          "": record["amount"],
-    #          "origin_amount": record["origin_amount"],
-    #          "order_counts": record["order_counts"],
-    #          "user_counts": record["user_counts"]})
-    # result = [v for k, v in time_buckets_map.items()]
-    #
-    #
-    # col_name =['show_date',q_obj['dim'],'total_amount']
-    # result = pd.DataFrame(list(record_list),columns= col_name).to_json()
-
-    # return result
-
 
 @device_api.route("/device_option", methods=['GET'])
 @swag_from('doc/device_option.yaml')
