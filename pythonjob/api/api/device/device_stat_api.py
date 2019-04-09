@@ -89,9 +89,9 @@ def device_option():
     return jsonify(options)
 
 
-@device_api.route("/device_active", methods=['GET'])
-@swag_from('doc/device_active.yaml')
-def device_active():
+@device_api.route("/device_active_table", methods=['GET'])
+@swag_from('doc/device_active_table.yaml')
+def device_active_table():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
 
@@ -162,9 +162,9 @@ def device_active():
     return jsonify(result)
 
 
-@device_api.route("/device_increase", methods=['GET'])
-@swag_from('doc/device_increase.yaml')
-def device_increase():
+@device_api.route("/device_increase_table", methods=['GET'])
+@swag_from('doc/device_increase_table.yaml')
+def device_increase_table():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
 
