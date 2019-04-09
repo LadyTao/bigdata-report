@@ -10,16 +10,12 @@ from pprintpp import pprint as pp
 from flask import request, jsonify, make_response, stream_with_context, Response
 import os
 
-
 import json
 
 from flask import Blueprint, render_template
 from flasgger import swag_from
 
-
-
 device_api = Blueprint('device_api', __name__)
-
 
 import pymysql.cursors
 import settings
@@ -83,6 +79,7 @@ def gen_sql(sql, q_obj):
 
     return sql
 
+
 @device_api.route("/device_option", methods=['GET'])
 @swag_from('doc/device_option.yaml')
 def device_option():
@@ -111,7 +108,7 @@ def device_active_table():
         sql = sql.replace('__TABLE_NAME__', 'device_active_week')
     else:
         sql = sql.replace('__TABLE_NAME__', 'device_active_month')
-    print("active sql:", sql)
+    # print("active sql:", sql)
 
     host = settings.device_host
     port = settings.device_port
@@ -125,30 +122,29 @@ def device_active_table():
                                    port=port)
 
     with device_mysql.cursor() as cursor:
-        print("sql_query in get data:", sql)
+        # print("sql_query in get data:", sql)
         cursor.execute(sql)
         record_list = cursor.fetchall()
-        print(record_list)
+        # print(record_list)
 
         final_result = []
         for idx, record in enumerate(record_list):
-            print("idx:", idx, '-->record', record)
+            # print("idx:", idx, '-->record', record)
             record_map = {}
 
             record_map[q_obj['dim']] = record[0]
             record_map['total_amount'] = int(record[1])
-            print("record_tmp:", record_map)
+            # print("record_tmp:", record_map)
             final_result.append(record_map)
 
     # 当所选维度是日期时，针对日期排序，实现最近日期的数据显示在分页的靠前页面
-    print("un_sorted_final_result:",final_result)
+    # print("un_sorted_final_result:",final_result)
     if 'stat_date' in final_result[0].keys():
-        print("begin to sort the result:")
-        final_result = sorted(final_result,key = lambda e:e['stat_date'],reverse = True)
-        print("sorted_final_result:",final_result)
+        # print("begin to sort the result:")
+        final_result = sorted(final_result, key=lambda e: e['stat_date'], reverse=True)
+        # print("sorted_final_result:",final_result)
 
-
-    #添加数据分页功能
+    # 添加数据分页功能
     paged_list = []
     start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
                          q_obj['page']
@@ -184,7 +180,7 @@ def device_increase_table():
         sql = sql.replace('__TABLE_NAME__', 'device_increase_week')
     else:
         sql = sql.replace('__TABLE_NAME__', 'device_increase_month')
-    print("increase sql:", sql)
+    # print("increase sql:", sql)
 
     host = settings.device_host
     port = settings.device_port
@@ -198,30 +194,29 @@ def device_increase_table():
                                    port=port)
 
     with device_mysql.cursor() as cursor:
-        print("sql_query in get data:", sql)
+        # print("sql_query in get data:", sql)
         cursor.execute(sql)
         record_list = cursor.fetchall()
-        print(record_list)
+        # print(record_list)
 
         final_result = []
         for idx, record in enumerate(record_list):
-            print("idx:", idx, '-->record', record)
+            # print("idx:", idx, '-->record', record)
             record_map = {}
 
             record_map[q_obj['dim']] = record[0]
             record_map['total_amount'] = int(record[1])
-            print("record_tmp:", record_map)
+            # print("record_tmp:", record_map)
             final_result.append(record_map)
 
     # 当所选维度是日期时，针对日期排序，实现最近日期的数据显示在分页的靠前页面
-    print("un_sorted_final_result:",final_result)
+    # print("un_sorted_final_result:",final_result)
     if 'stat_date' in final_result[0].keys():
-        print("begin to sort the result:")
-        final_result = sorted(final_result,key = lambda e:e['stat_date'],reverse = True)
-        print("sorted_final_result:",final_result)
+        # print("begin to sort the result:")
+        final_result = sorted(final_result, key=lambda e: e['stat_date'], reverse=True)
+        # print("sorted_final_result:",final_result)
 
-
-    #添加数据分页功能
+    # 添加数据分页功能
     paged_list = []
     start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
                          q_obj['page']
@@ -259,7 +254,7 @@ def device_increase_graph():
         sql = sql.replace('__TABLE_NAME__', 'device_increase_week')
     else:
         sql = sql.replace('__TABLE_NAME__', 'device_increase_month')
-    print("increase sql:", sql)
+    # print("increase sql:", sql)
 
     host = settings.device_host
     port = settings.device_port
@@ -273,10 +268,10 @@ def device_increase_graph():
                                    port=port)
 
     with device_mysql.cursor() as cursor:
-        print("sql_query in get data:", sql)
+        # print("sql_query in get data:", sql)
         cursor.execute(sql)
         record_list = cursor.fetchall()
-        print(record_list)
+        # print(record_list)
 
         record_map = collections.OrderedDict()
 
@@ -287,9 +282,9 @@ def device_increase_graph():
                 "dim": record[1],
                 "total_amount": int(record[2])
             })
-        print("record_map:",record_map)
+        # print("record_map:",record_map)
         result = [v for k, v in record_map.items()]
-        print("result:",result)
+        # print("result:",result)
     return jsonify(result)
 
 
@@ -316,7 +311,7 @@ def device_active_graph():
         sql = sql.replace('__TABLE_NAME__', 'device_active_week')
     else:
         sql = sql.replace('__TABLE_NAME__', 'device_active_month')
-    print("active  sql:", sql)
+    # print("active  sql:", sql)
 
     host = settings.device_host
     port = settings.device_port
@@ -330,10 +325,10 @@ def device_active_graph():
                                    port=port)
 
     with device_mysql.cursor() as cursor:
-        print("sql_query in get data:", sql)
+        # print("sql_query in get data:", sql)
         cursor.execute(sql)
         record_list = cursor.fetchall()
-        print(record_list)
+        # print(record_list)
 
         record_map = collections.OrderedDict()
 
@@ -344,12 +339,11 @@ def device_active_graph():
                 "dim": record[1],
                 "total_amount": int(record[2])
             })
-        print("record_map:",record_map)
+        # print("record_map:",record_map)
         result = [v for k, v in record_map.items()]
-        print("result:",result)
+        # print("result:",result)
 
     return jsonify(result)
-
 
 
 @device_api.route("/device_total", methods=['GET'])
@@ -368,7 +362,7 @@ def device_total():
         GROUP BY __DIM__ HAVING sum( total_amount )  >10 ;
     """
     sql = gen_sql(sql=sql_str, q_obj=q_obj)
-    print("total sql:", sql)
+    # print("total sql:", sql)
 
     host = settings.device_host
     port = settings.device_port
@@ -382,20 +376,20 @@ def device_total():
                                    port=port)
 
     with device_mysql.cursor() as cursor:
-        print("sql_query in get data:", sql)
+        # print("sql_query in get data:", sql)
         cursor.execute(sql)
         record_list = cursor.fetchall()
-        print(record_list)
+        # print(record_list)
 
         result = []
         for idx, record in enumerate(record_list):
-            print("idx:", idx, '-->record', record)
+            # print("idx:", idx, '-->record', record)
             record_map = {}
 
             record_map[q_obj['dim']] = record[0]
 
             record_map['total_amount'] = int(record[1])
-            print("record_tmp:", record_map)
+            # print("record_tmp:", record_map)
             result.append(record_map)
         # col_name =[q_obj['dim'],'total_amount']
         # result = pd.DataFrame(list(record_list),columns= col_name)
