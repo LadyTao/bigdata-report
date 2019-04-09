@@ -293,9 +293,10 @@ def ci_sales_csv():
     sql_query = sql_query.replace("group by intv,", "group by ")
     date_histograms = query_ci_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
+    print("q_obj:",q_obj)
 
     def dict_to_str(dim, dim_statistics_list):
-        field_mapping = {"channel": "渠道", "productline": "产品线",
+        field_mapping = {"show_week":"时间","show_month":"时间","show_date":"时间","channel": "渠道", "productline": "产品线",
                          "subscribe_type": "订阅类型", "member_class": "会员等级",
                          "os_platform": "操作系统", "payment_pattern": "支付方式"}
         import codecs
