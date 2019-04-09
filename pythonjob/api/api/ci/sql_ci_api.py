@@ -179,20 +179,20 @@ def get_dim_statistics_list(response):
     '''
     input:
     {
-      { 
+      {
         time: ...,
         buckets: [
           {amount:..., dim: .., user_counts: .., dim:...,}
         ]
       }
-    }    
-    
+    }
+
 
     output:
     {
        [
          {'dim':.. , 'user_counts': .., 'order_counts': .., 'amount':...}
-       ]  
+       ]
     }
     '''
     '''
@@ -213,7 +213,7 @@ def get_dim_statistics_list(response):
                 dim_matrix_map[bucket['dim']][key] += bucket[key]
 
     sorted_dim_matrix_map = collections.OrderedDict(
-        sorted(dim_matrix_map.items()))
+        sorted(dim_matrix_map.items(),reverse=True))
 
     dim_matric_list = []
     for dim, matrics_map in sorted_dim_matrix_map.items():
