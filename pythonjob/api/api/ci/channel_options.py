@@ -78,9 +78,11 @@ def ci_channel_info(host, port, user, password, db, charset='utf8mb4'):
             lv1, lv2, lv3 = record['channel_1'], record['channel_2'], record[
                 'channel_3']
             if lv3 is not None:
-                channel_level[lv1][lv2][lv3] = channel_name[lv3]
+                if channel_name[lv3]:
+                    channel_level[lv1][lv2][lv3] = channel_name[lv3]
             if lv3 is None:
-                channel_level[lv1][lv2] = channel_name[lv2]
+                if channel_name[lv2]:
+                    channel_level[lv1][lv2] = channel_name[lv2]
         channel_level["其他"] = 'missing'
         channel_level = json.loads(
             json.dumps(channel_level, ensure_ascii=False))
