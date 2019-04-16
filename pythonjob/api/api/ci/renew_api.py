@@ -50,6 +50,7 @@ channel_db = settings.ci_channel_db
 channel_name, level = channel_options.ci_channel_info(host=channel_host, port=channel_port,
                         user=channel_user, password=channel_password,
                         db=channel_db)
+
 option["channel"] = level
 options = option
 
@@ -213,6 +214,7 @@ def ci_retention_table():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
     sql_query = gen_sql(q_obj)
+    print("sql_query in ci_retention:",sql_query)
     date_histograms = query_retention_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
 
@@ -226,6 +228,7 @@ def ci_retention_table():
         'total': len(dim_statistics_list),
         'result': paged_list
     }
+    print("result:",result)
     return jsonify(result)
 
 
