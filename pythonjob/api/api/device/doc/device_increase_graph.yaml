@@ -19,7 +19,7 @@ parameters:
      type: string
      default: dev_type
      required: true
-     description: 对比维度
+     description: 对比维度 ,可选参数:app_version,dev_type,stat_date
    - name: intv
      in: query
      type: string
