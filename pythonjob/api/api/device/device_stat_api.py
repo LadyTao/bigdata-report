@@ -23,7 +23,7 @@ import settings
 db = settings.device_db
 
 options = {
-    "app_vesion": ['9.0.7', '9.0.7.2', '9.1.0', '9.0.8.0', '9.0.8.2', '9.0.7.4',
+    "app_version": ['9.0.7', '9.0.7.2', '9.1.0', '9.0.8.0', '9.0.8.2', '9.0.7.4',
                    '9.1.2.0', '9.1.1.2', '9.1.1.0', '9.1.0.11', '9.1.0.2',
                    '9.1.0.0', '9.1.0.5', '3.0.0.7', '9.1.0.10', '9.1.0.8',
                    '9.1.0.12', '9.1.0.4', '9.1.0.6', '9.0.4.4', '9.2.0.0',
@@ -64,13 +64,20 @@ def gen_sql(sql, q_obj):
             v = ""
         else:
             v = "','".join(q_obj['condition'][k])
+            print("the replace v is :",v)
 
         __replace__ = "__%s__" % k.upper()
-        # print("__replace__:",__replace__)
-
-        if v != '':
+        print(k, v, __replace__)
+        if v:
             v = "AND %s in ('%s')" % (k, v)
+            print("v:", v)
         conditions = conditions.replace(__replace__, v)
+
+
+
+    print("conditions:", conditions)
+
+
 
     sql = sql.replace("__CONDITIONS__", conditions)
     sql = sql.replace("__START__", q_obj['start'])
@@ -98,7 +105,7 @@ def device_active_table():
 	sum(increase) 
     FROM  __TABLE_NAME__
     where 	stat_date  BETWEEN '__START__' AND '__END__' 
-    __CONDITIONS__ 
+    __CONDITIONS__
     GROUP BY	__DIM__  having  sum( increase )  >10 ;
     """
     sql = gen_sql(sql=sql_str, q_obj=q_obj)
@@ -108,7 +115,7 @@ def device_active_table():
         sql = sql.replace('__TABLE_NAME__', 'device_active_week')
     else:
         sql = sql.replace('__TABLE_NAME__', 'device_active_month')
-    # print("active sql:", sql)
+    print("active sql:", sql)
 
     host = settings.device_host
     port = settings.device_port
