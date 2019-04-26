@@ -124,9 +124,16 @@ def gen_sql(q_obj):
        as ci 
        on temp.stat_intv = ci.stat_intv 
     """
-    #LIMIT __PAGE_START__, __PAGE_SIZE__ 
-    intv_field = "stat_date" if q_obj[
-                                    'intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
+    #LIMIT __PAGE_START__, __PAGE_SIZE__
+    if q_obj['intv']== '1d':
+        intv_field=' state_date '
+    elif q_obj['intv']=='1w':
+        intv_field ="subdate(stat_date,date_format(stat_date,'%w')-1)"
+    else:
+        intv_field =" DATE_FORMAT(stat_date,'%Y-%m') "
+
+
+    # intv_field = "stat_date" if q_obj['intv'] == '1d' else "DATE_FORMAT(stat_date,'%Y-%m')"
     if q_obj['same_type']:
         total_renew_user = "sum(case when expire_user_level=renew_user_level and expire_time_type=renew_time_type then renew_user else 0 end)"
     else:
