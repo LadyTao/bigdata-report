@@ -1,0 +1,57 @@
+自有购物车指标曲线数据接口
+传入查询相关条件，返回相关的指标数据
+---
+parameters:
+   - name: start
+     in: query
+     type: string
+     default: "2019-04-02"
+     description: 查询开始时间
+     required: true
+   - name: end
+     in: query
+     type: string
+     default: "2019-04-19"
+     description: 查询结束时间
+     required: true
+   - name: dim
+     in: query
+     type: string
+     default: plan_num
+     required: true
+     description: |
+                对比维度 ,
+                可选参数:整数型指标：plan_num (进入plan页面次数),
+                                  plan_user_num (进入plan页面用户数),
+                                  checkout_num (加入购物车次数),
+                                  checkout_user_num (加入购物车单数),
+                                  generate_num (生成订单数),
+                                  succeed_num (成功支付订单数),
+                                  falied_num (失败支付订单数),
+                                  unpay_num (未支付订单数),
+                比率型指标：pay_succeed_rate (支付成功率),
+                           pay_convert_rate (支付转化率),
+                           plan_user_rate (plan页用户转化率),
+                           user_buy_rate (用户购买转化率),
+                           user_commit_rate (用户支付提交率)
+   - name: intv
+     in: query
+     type: string
+     required: true
+     enum: [1d, 1w, 1M]
+     default: 1d
+     description: 数据聚合时间周期
+   - name: condition
+     in: query
+     type: string
+     description: 选取查询的字段为key，条件为数值（超过一个以数组表达）。json string 格式： {"product":["filmora"],"site_type":["Wondershare英文站"]}
+   - name: size
+     in: query
+     type: int
+   - name: page
+     in: query
+     type: int
+
+responses:
+   200:
+        description: 返回各个维度的指标的数据

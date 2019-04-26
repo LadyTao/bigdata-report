@@ -1,0 +1,45 @@
+自有购物车指标列表数据接口
+传入查询相关条件，返回相关的指标数据
+---
+parameters:
+   - name: start
+     in: query
+     type: string
+     default: "2019-03-01"
+     description: 查询开始时间
+     required: true
+   - name: end
+     in: query
+     type: string
+     default: "2019-04-23"
+     description: 查询结束时间
+     required: true
+   - name: dim
+     in: query
+     type: string
+     default: stat_date
+     required: true
+     description: 对比维度 ,可选参数:stat_date,product,site_type
+   - name: intv
+     in: query
+     type: string
+     required: true
+     enum: [1d, 1w, 1M]
+     default: 1d
+     description: 数据聚合时间周期
+   - name: condition
+     in: query
+     type: string
+     description: 选取查询的字段为key，条件为数值（超过一个以数组表达）。json string 格式：{"product":['filmora'],"site_type":['Wondershare英文站']}
+   - name: size
+     in: query
+     type: int
+     description: 单页面显示数据量
+   - name: page
+     in: query
+     type: int
+     description: 页面编号
+
+responses:
+   200:
+        description: 返回各个维度的聚合指标的数据列表
