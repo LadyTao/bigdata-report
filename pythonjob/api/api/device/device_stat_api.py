@@ -105,12 +105,13 @@ def device_option():
                 options[record[0]].append(record[1])
 
     print("options:", options)
-    fianal = {"dev_type": [k for k, v in options.items()],
+    result = {"dev_type": [k for k, v in options.items()],
               "app_version": options,
               "intv": ["1d", "1w", "1M"]}
-    result = {"code": 200,
-              "msg": "成功",
-              "data": fianal}
+    # result = {"code": 200,
+    #           "msg": "成功",
+    #           "data": fianal}
+
 
     return jsonify(result)
 
@@ -385,9 +386,9 @@ def device_total():
         __DIM__ ,
         sum( total_amount ) 
         FROM  device_total_day
-        where 	stat_date  BETWEEN '__START__' AND '__END__' 
+        where 	total_amount>10
         __CONDITIONS__ 
-        GROUP BY __DIM__ HAVING sum( total_amount )  >10 ;
+        GROUP BY __DIM__ HAVING sum( total_amount )  >100 ;
     """
     sql = gen_sql(sql=sql_str, q_obj=q_obj)
     # print("total sql:", sql)
