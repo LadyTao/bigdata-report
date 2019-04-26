@@ -160,9 +160,9 @@ def cart_funnel_table():
     }
 
     # 返回分页数据
-    page_result = {"code": 200,
-                   "msg": "成功",
-                   "data": page_result}
+    # page_result = {"code": 200,
+    #                "msg": "成功",
+    #                "data": page_result}
     # print("result", result)
     return jsonify(page_result)
 
@@ -247,10 +247,11 @@ def cart_funnel_graph():
                 # print("type:", type(record[1]))
                 record_map[record[0]] = int(record[1])
 
-    result = {"code": 200,
-              "msg": "成功",
-              "data": record_map}
-    print("result", result)
+    # result = {"code": 200,
+    #           "msg": "成功",
+    #           "data": record_map}
+    # print("result", result)
+    result = record_map
     return jsonify(result)
 
 
@@ -331,10 +332,11 @@ def cart_funnel():
             record_map["final_rate"] = float(record[6])
 
     print("record_map:", record_map)
-    result = {"code": 200,
-              "msg": "成功",
-              "data": record_map}
-    print("result", result)
+    # result = {"code": 200,
+    #           "msg": "成功",
+    #           "data": record_map}
+    # print("result", result)
+    result = record_map
     return jsonify(result)
 
 
@@ -369,11 +371,11 @@ def cart_option():
                 options[record[0]].append(record[1])
 
     print("options:", options)
-    fianal = {"product": [k for k, v in options.items()],
+    result = {"product": [k for k, v in options.items()],
               "site_type": options}
 
-    result = {"code": 200,
-              "msg": "成功",
-              "data": fianal}
+    # result = {"code": 200,
+    #           "msg": "成功",
+    #           "data": fianal}
 
     return jsonify(result)
