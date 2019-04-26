@@ -126,7 +126,7 @@ def gen_sql(q_obj):
     """
     #LIMIT __PAGE_START__, __PAGE_SIZE__
     if q_obj['intv']== '1d':
-        intv_field=' state_date '
+        intv_field=' stat_date '
     elif q_obj['intv']=='1w':
         intv_field ="subdate(stat_date,date_format(stat_date,'%w')-1)"
     else:
