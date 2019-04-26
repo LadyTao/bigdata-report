@@ -105,7 +105,7 @@ def device_option():
                 options[record[0]].append(record[1])
 
     print("options:", options)
-    result = {"dev_type": [k for k, v in options.items()],
+    result = {"dev_type": sorted([k for k, v in options.items()]),
               "app_version": options,
               "intv": ["1d", "1w", "1M"]}
     # result = {"code": 200,
