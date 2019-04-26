@@ -22,18 +22,7 @@ import settings
 
 db = settings.device_db
 
-options = {
-    "app_version": ['9.0.7', '9.0.7.2', '9.1.0', '9.0.8.0', '9.0.8.2', '9.0.7.4',
-                   '9.1.2.0', '9.1.1.2', '9.1.1.0', '9.1.0.11', '9.1.0.2',
-                   '9.1.0.0', '9.1.0.5', '3.0.0.7', '9.1.0.10', '9.1.0.8',
-                   '9.1.0.12', '9.1.0.4', '9.1.0.6', '9.0.4.4', '9.2.0.0',
-                   '9.2.7', '9.1.1', '9.1.0.7', '9.0.6.1', '9.1.0.9', '3.0.0.3',
-                   '9.1.0.1', '3.0.0.1', '3.0.0.0', '9.0.7.1', '9.0.9.0',
-                   '9.0.7.3', '3.0.0.6', '3.0.0.2', '3.0.0.4', '3.0.0.5',
-                   '1.0.0', ],
-    "dev_type": ['win', 'mac'],
-    "intv": ["1d", "1w", "1M"]
-}
+
 
 
 def parse_query_obj(q_obj):
@@ -64,7 +53,7 @@ def gen_sql(sql, q_obj):
             v = ""
         else:
             v = "','".join(q_obj['condition'][k])
-            print("the replace v is :",v)
+            print("the replace v is :", v)
 
         __replace__ = "__%s__" % k.upper()
         print(k, v, __replace__)
@@ -73,11 +62,7 @@ def gen_sql(sql, q_obj):
             print("v:", v)
         conditions = conditions.replace(__replace__, v)
 
-
-
     print("conditions:", conditions)
-
-
 
     sql = sql.replace("__CONDITIONS__", conditions)
     sql = sql.replace("__START__", q_obj['start'])
@@ -90,7 +75,44 @@ def gen_sql(sql, q_obj):
 @device_api.route("/device_option", methods=['GET'])
 @swag_from('doc/device_option.yaml')
 def device_option():
-    return jsonify(options)
+    # 查询数据库获取相关的设备类型下拉项和其对应的子选项
+
+    sql = 'SELECT  DISTINCT dev_type, app_version from device_active_day'
+
+    host = settings.device_host
+    port = settings.device_port
+    user = settings.device_user
+    password = settings.device_password
+    db = 'data_user'
+    device_mysql = pymysql.connect(host=host,
+                                   user=user,
+                                   password=password,
+                                   db=db,
+                                   port=port)
+
+    options = collections.defaultdict()
+
+    with device_mysql.cursor() as cursor:
+        # print("sql_query in get data:", sql)
+        cursor.execute(sql)
+        record_list = cursor.fetchall()
+        for idx, record in enumerate(record_list):
+            # print("record:", record)
+            if record[0] not in options.keys():
+                options[record[0]] = []
+                options[record[0]].append(record[1])
+            else:
+                options[record[0]].append(record[1])
+
+    print("options:", options)
+    fianal = {"dev_type": [k for k, v in options.items()],
+              "app_version": options,
+              "intv": ["1d", "1w", "1M"]}
+    result = {"code": 200,
+              "msg": "成功",
+              "data": fianal}
+
+    return jsonify(result)
 
 
 @device_api.route("/device_active_table", methods=['GET'])
@@ -201,27 +223,27 @@ def device_increase_table():
                                    port=port)
 
     with device_mysql.cursor() as cursor:
-        # print("sql_query in get data:", sql)
+        print("sql_query in get data:", sql)
         cursor.execute(sql)
         record_list = cursor.fetchall()
         # print(record_list)
 
         final_result = []
         for idx, record in enumerate(record_list):
-            # print("idx:", idx, '-->record', record)
+            print("idx:", idx, '-->record', record)
             record_map = {}
 
             record_map[q_obj['dim']] = record[0]
             record_map['total_amount'] = int(record[1])
-            # print("record_tmp:", record_map)
+            print("record_tmp:", record_map)
             final_result.append(record_map)
 
     # 当所选维度是日期时，针对日期排序，实现最近日期的数据显示在分页的靠前页面
-    # print("un_sorted_final_result:",final_result)
+    print("un_sorted_final_result:", final_result)
     if 'stat_date' in final_result[0].keys():
         # print("begin to sort the result:")
         final_result = sorted(final_result, key=lambda e: e['stat_date'], reverse=True)
-        # print("sorted_final_result:",final_result)
+        print("sorted_final_result:", final_result)
 
     # 添加数据分页功能
     paged_list = []
@@ -234,7 +256,6 @@ def device_increase_table():
         'total': len(final_result),
         'result': paged_list
     }
-    return jsonify(result)
     return jsonify(result)
 
 
@@ -404,11 +425,128 @@ def device_total():
     return jsonify(result)
 
 
-@device_api.route("/device_rention", methods=['GET'])
-@swag_from('doc/device_rention.yaml')
-def device_rention():
+@device_api.route("/device_rention_table", methods=['GET'])
+@swag_from('doc/device_rention_table.yaml')
+def device_rention_table():
     q_obj = request.args.to_dict()
     q_obj = parse_query_obj(q_obj)
-    sql_query = gen_sql(q_obj)
-    date_histograms = query_ci_data(sql_query, q_obj)
-    return jsonify(date_histograms)
+
+    # 根据传入的时间间隔，查询不同的表，返回不同的数据
+    if q_obj['intv'] == '1d':
+        sql_str="""
+        SELECT
+        __DIM__,
+        sum(increase_count),
+        sum(one_day) ,
+        sum(two_day),
+        sum(three_day),
+        sum(four_day),
+        sum(five_day),
+        sum(six_day),
+        sum(seven_day),
+        sum(one_day)/sum(increase_count) ,
+        sum(two_day)/sum(increase_count),
+        sum(three_day)/sum(increase_count),
+        sum(four_day)/sum(increase_count),
+        sum(five_day)/sum(increase_count),
+        sum(six_day)/sum(increase_count),
+        sum(seven_day)/sum(increase_count)
+    FROM
+        device_increase_retention_day 
+    WHERE
+          where 	stat_date  BETWEEN '__START__' AND '__END__' 
+        __CONDITIONS__
+        GROUP BY	__DIM__  ;
+        
+        """
+            #sql = sql.replace('__TABLE_NAME__', 'device_active_day')
+    elif q_obj['intv'] == '1w':
+        sql_str="""
+                SELECT
+                __DIM__,
+                sum(increase_count),
+                sum(one_week) ,
+                sum(two_week),
+                sum(three_week),
+                sum(four_week),
+                sum(five_week),
+                sum(six_week),
+                sum(seven_week),
+                sum(eight_week),
+                sum(one_week)/sum(increase_count) ,
+                sum(two_week)/sum(increase_count),
+                sum(three_week)/sum(increase_count),
+                sum(four_week)/sum(increase_count),
+                sum(five_week)/sum(increase_count),
+                sum(six_week)/sum(increase_count),
+                sum(seven_week)/sum(increase_count),
+                sum(eight_week)/sum(increase_count)
+            FROM
+                device_increase_retention_week 
+            WHERE
+                  where 	stat_date  BETWEEN '__START__' AND '__END__' 
+                __CONDITIONS__
+                GROUP BY	__DIM__  ;
+                """
+    #sql = sql.replace('__TABLE_NAME__', 'device_active_week')
+    else:
+        sql_str="""
+                SELECT
+                __DIM__,
+                sum(increase_count),
+                sum(one_month) ,
+                sum(two_month),
+                sum(three_month),
+                sum(four_month),
+                sum(five_month),
+                sum(six_month),
+                sum(seven_month),
+                sum(eight_month),
+                sum(one_month)/sum(increase_count) ,
+                sum(two_month)/sum(increase_count),
+                sum(three_month)/sum(increase_count),
+                sum(four_month)/sum(increase_count),
+                sum(five_month)/sum(increase_count),
+                sum(six_month)/sum(increase_count),
+                sum(seven_month)/sum(increase_count),
+                sum(eight_month)/sum(increase_count)
+            FROM
+                device_increase_retention_month 
+            WHERE
+                  where 	stat_date  BETWEEN '__START__' AND '__END__' 
+                __CONDITIONS__
+                GROUP BY	__DIM__  ;
+            """
+
+    sql = gen_sql(sql=sql_str, q_obj=q_obj)
+    host = settings.device_host
+    port = settings.device_port
+    user = settings.device_user
+    password = settings.device_password
+    db = 'data_user'
+    device_mysql = pymysql.connect(host=host,
+                                   user=user,
+                                   password=password,
+                                   db=db,
+                                   port=port)
+
+    with device_mysql.cursor() as cursor:
+        print("sql_query in get data:", sql)
+        cursor.execute(sql)
+        record_list = cursor.fetchall()
+        # print(record_list)
+
+        result = []
+        for idx, record in enumerate(record_list):
+            if q_obj["intv"]=='1d' and q_obj["retention_var"]=="retention_user":
+                print("idx:", idx, '-->record', record)
+
+
+
+
+            # print("record_tmp:", record_map)
+
+        # col_name =[q_obj['dim'],'total_amount']
+        # result = pd.DataFrame(list(record_list),columns= col_name)
+        # result['show_date'] = result['show_date'].apply((lambda x: x.strftime("%Y-%m-%d")))
+    return jsonify(result)
