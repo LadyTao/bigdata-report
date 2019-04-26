@@ -1,4 +1,4 @@
-#from flask.ext.cors import CORS
+# from flask.ext.cors import CORS
 from flask_cors import CORS
 from pprintpp import pprint as pp
 from flask import Flask, request, Response, jsonify
@@ -8,6 +8,7 @@ import optparse
 import os
 from flasgger import Swagger
 import sys
+
 sys.path.append('..')
 sys.path.append('.')
 import settings
@@ -17,15 +18,17 @@ from api.filmora.funnel import funnel_api
 from api.ci.sql_ci_api import ci_api
 from api.ci.renew_api import renew_api
 from api.device.device_stat_api import device_api
+from api.cart.cart_api import cart_api
+
 
 def create_app():
-
     app = Flask(__name__)
     app.register_blueprint(vp_api)
     app.register_blueprint(funnel_api)
     app.register_blueprint(ci_api)
     app.register_blueprint(renew_api)
     app.register_blueprint(device_api)
+    app.register_blueprint(cart_api)
 
     cors = CORS(app)
     sess = Session()
@@ -34,7 +37,6 @@ def create_app():
 
 
 if __name__ == "__main__":
-
     parser = optparse.OptionParser()
     options, _ = parser.parse_args()
 
@@ -45,6 +47,5 @@ if __name__ == "__main__":
 
     pp(app.config)
     app.run(host='0.0.0.0', port=settings.port,
-                            threaded=True,
-                            use_reloader=True)
-
+            threaded=True,
+            use_reloader=True)
