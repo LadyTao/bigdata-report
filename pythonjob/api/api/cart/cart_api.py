@@ -371,7 +371,7 @@ def cart_option():
                 options[record[0]].append(record[1])
 
     print("options:", options)
-    result = {"product": [k for k, v in options.items()],
+    result = {"product": sorted([k for k, v in options.items()]),
               "site_type": options}
 
     # result = {"code": 200,
