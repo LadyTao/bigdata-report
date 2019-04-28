@@ -168,22 +168,25 @@ def device_active_table():
 
     # 当所选维度是日期时，针对日期排序，实现最近日期的数据显示在分页的靠前页面
     # print("un_sorted_final_result:",final_result)
-    if 'stat_date' in final_result[0].keys():
-        # print("begin to sort the result:")
-        final_result = sorted(final_result, key=lambda e: e['stat_date'], reverse=True)
-        # print("sorted_final_result:",final_result)
+    if len(final_result) == 0:
+        result = {}
+    else:
+        if 'stat_date' in final_result[0].keys():
+            # print("begin to sort the result:")
+            final_result = sorted(final_result, key=lambda e: e['stat_date'], reverse=True)
+            # print("sorted_final_result:",final_result)
 
-    # 添加数据分页功能
-    paged_list = []
-    start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
-                         q_obj['page']
-    for idx, result_one in enumerate(final_result):
-        if start_idx <= idx < end_idx:
-            paged_list.append(result_one)
-    result = {
-        'total': len(final_result),
-        'result': paged_list
-    }
+        # 添加数据分页功能
+        paged_list = []
+        start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
+                             q_obj['page']
+        for idx, result_one in enumerate(final_result):
+            if start_idx <= idx < end_idx:
+                paged_list.append(result_one)
+        result = {
+            'total': len(final_result),
+            'result': paged_list
+        }
     return jsonify(result)
 
 
@@ -229,6 +232,7 @@ def device_increase_table():
         # print(record_list)
 
         final_result = []
+        print("the length of record_list：", len(record_list))
         for idx, record in enumerate(record_list):
             print("idx:", idx, '-->record', record)
             record_map = {}
@@ -240,22 +244,27 @@ def device_increase_table():
 
     # 当所选维度是日期时，针对日期排序，实现最近日期的数据显示在分页的靠前页面
     print("un_sorted_final_result:", final_result)
-    if 'stat_date' in final_result[0].keys():
-        # print("begin to sort the result:")
-        final_result = sorted(final_result, key=lambda e: e['stat_date'], reverse=True)
-        print("sorted_final_result:", final_result)
 
-    # 添加数据分页功能
-    paged_list = []
-    start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
-                         q_obj['page']
-    for idx, result_one in enumerate(final_result):
-        if start_idx <= idx < end_idx:
-            paged_list.append(result_one)
-    result = {
-        'total': len(final_result),
-        'result': paged_list
-    }
+    # 当前查询条件的结果返回为空时，返回空字典
+    if len(final_result) == 0:
+        result = {}
+    else:
+        if 'stat_date' in final_result[0].keys():
+            # print("begin to sort the result:")
+            final_result = sorted(final_result, key=lambda e: e['stat_date'], reverse=True)
+            print("sorted_final_result:", final_result)
+
+        # 添加数据分页功能
+        paged_list = []
+        start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
+                             q_obj['page']
+        for idx, result_one in enumerate(final_result):
+            if start_idx <= idx < end_idx:
+                paged_list.append(result_one)
+        result = {
+            'total': len(final_result),
+            'result': paged_list
+        }
     return jsonify(result)
 
 
