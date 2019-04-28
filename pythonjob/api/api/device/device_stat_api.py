@@ -548,7 +548,7 @@ def device_rention_table():
         table_result = []
         gragh_1 = []
         gragh_3 = []
-        gragh_5 = []
+        gragh_7 = []
 
         # convet the NoneType to 0
         def transfer(record_item):
@@ -559,7 +559,7 @@ def device_rention_table():
             user_rate = collections.OrderedDict()
             grapg_map1 = collections.OrderedDict()
             grapg_map3 = collections.OrderedDict()
-            grapg_map5 = collections.OrderedDict()
+            grapg_map7 = collections.OrderedDict()
             # 查询日表时，数据有16列
             if q_obj["intv"] == '1d':
                 # print("idx:", idx, '-->record', record)
@@ -598,9 +598,9 @@ def device_rention_table():
                 grapg_map3["rate"] = transfer(record[11])
                 gragh_3.append(grapg_map3)
 
-                grapg_map5["date"] = record[0].strftime("%Y-%m-%d")
-                grapg_map5["rate"] = transfer(record[13])
-                gragh_5.append(grapg_map5)
+                grapg_map7["date"] = record[0].strftime("%Y-%m-%d")
+                grapg_map7["rate"] = transfer(record[15])
+                gragh_7.append(grapg_map7)
             # 筛选维度是周或者月时，数据有18列
             else:
 
@@ -638,13 +638,13 @@ def device_rention_table():
                 grapg_map3["rate"] = transfer(record[12])
                 gragh_3.append(grapg_map3)
 
-                grapg_map5["date"] = record[0].strftime("%Y-%m-%d")
-                grapg_map5["rate"] = transfer(record[14])
-                gragh_5.append(grapg_map5)
+                grapg_map7["date"] = record[0].strftime("%Y-%m-%d")
+                grapg_map7["rate"] = transfer(record[16])
+                gragh_7.append(grapg_map7)
     result = {"table_result": table_result,
               "graph_result": {
                   "graph1": gragh_1,
                   "graph3": gragh_3,
-                  "graph5": gragh_5
+                  "graph7": gragh_7
               }}
     return jsonify(result)
