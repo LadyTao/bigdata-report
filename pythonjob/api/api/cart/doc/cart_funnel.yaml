@@ -14,13 +14,18 @@ parameters:
      default: "2019-04-19"
      description: 查询结束时间
      required: true
-   - name: funnel_type pay_ok(购物车成功转化漏斗) pay_fail(购物车失败订单漏斗) unpay(购物车未支付订单漏斗)
+   - name: funnel_type
      in: query
      type: string
      required: true
      enum: [pay_ok,pay_fail,unpay]
      default: pay_ok
-     description: 购物车漏斗类型
+     description:
+                  购物车漏斗类型,
+                  可选参数,
+                  pay_ok(购物车成功转化漏斗)
+                  pay_fail(购物车失败订单漏斗)
+                  unpay(购物车未支付订单漏斗)
    - name: condition
      in: query
      type: string
