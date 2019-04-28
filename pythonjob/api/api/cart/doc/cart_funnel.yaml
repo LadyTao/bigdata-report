@@ -39,4 +39,4 @@ parameters:
 
 responses:
    200:
-        description: 返回各个
+        description: 返回各个漏斗的数据
