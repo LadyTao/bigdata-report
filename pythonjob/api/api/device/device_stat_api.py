@@ -19,10 +19,9 @@ device_api = Blueprint('device_api', __name__)
 
 import pymysql.cursors
 import settings
+from datetime import date
 
 db = settings.device_db
-
-
 
 
 def parse_query_obj(q_obj):
@@ -30,6 +29,7 @@ def parse_query_obj(q_obj):
     q_obj['end'] = q_obj.get("end", "2018-04-03")
     q_obj['intv'] = q_obj.get("intv", "1d")
     q_obj['dim'] = q_obj.get("dim", "dev_type")
+    q_obj['retention_var'] = q_obj.get("retention_var", "retention_user")
     q_obj['condition'] = json.loads(q_obj.get('condition', "{}"))
     q_obj['page'] = int(q_obj.get("page", '1'))
     q_obj['size'] = int(q_obj.get("size", '20'))
@@ -111,7 +111,6 @@ def device_option():
     # result = {"code": 200,
     #           "msg": "成功",
     #           "data": fianal}
-
 
     return jsonify(result)
 
@@ -297,7 +296,7 @@ def device_increase_graph():
                                    port=port)
 
     with device_mysql.cursor() as cursor:
-        # print("sql_query in get data:", sql)
+        print("sql_query in get data:", sql)
         cursor.execute(sql)
         record_list = cursor.fetchall()
         # print(record_list)
@@ -434,7 +433,7 @@ def device_rention_table():
 
     # 根据传入的时间间隔，查询不同的表，返回不同的数据
     if q_obj['intv'] == '1d':
-        sql_str="""
+        sql_str = """
         SELECT
         __DIM__,
         sum(increase_count),
@@ -455,14 +454,14 @@ def device_rention_table():
     FROM
         device_increase_retention_day 
     WHERE
-          where 	stat_date  BETWEEN '__START__' AND '__END__' 
+           	stat_date  BETWEEN '__START__' AND '__END__' 
         __CONDITIONS__
         GROUP BY	__DIM__  ;
         
         """
-            #sql = sql.replace('__TABLE_NAME__', 'device_active_day')
+        # sql = sql.replace('__TABLE_NAME__', 'device_active_day')
     elif q_obj['intv'] == '1w':
-        sql_str="""
+        sql_str = """
                 SELECT
                 __DIM__,
                 sum(increase_count),
@@ -485,13 +484,13 @@ def device_rention_table():
             FROM
                 device_increase_retention_week 
             WHERE
-                  where 	stat_date  BETWEEN '__START__' AND '__END__' 
+                   	stat_date  BETWEEN '__START__' AND '__END__' 
                 __CONDITIONS__
                 GROUP BY	__DIM__  ;
                 """
-    #sql = sql.replace('__TABLE_NAME__', 'device_active_week')
+    # sql = sql.replace('__TABLE_NAME__', 'device_active_week')
     else:
-        sql_str="""
+        sql_str = """
                 SELECT
                 __DIM__,
                 sum(increase_count),
@@ -514,7 +513,7 @@ def device_rention_table():
             FROM
                 device_increase_retention_month 
             WHERE
-                  where 	stat_date  BETWEEN '__START__' AND '__END__' 
+                   	stat_date  BETWEEN '__START__' AND '__END__' 
                 __CONDITIONS__
                 GROUP BY	__DIM__  ;
             """
@@ -535,19 +534,108 @@ def device_rention_table():
         print("sql_query in get data:", sql)
         cursor.execute(sql)
         record_list = cursor.fetchall()
-        # print(record_list)
+        print(record_list)
 
-        result = []
+        table_result = []
+        gragh_1 = []
+        gragh_3 = []
+        gragh_5 = []
+
+        # convet the NoneType to 0
+        def transfer(record_item):
+            return float(record_item) if record_item else 0
+
         for idx, record in enumerate(record_list):
-            if q_obj["intv"]=='1d' and q_obj["retention_var"]=="retention_user":
-                print("idx:", idx, '-->record', record)
+            user = collections.OrderedDict()
+            user_rate = collections.OrderedDict()
+            grapg_map1 = collections.OrderedDict()
+            grapg_map3 = collections.OrderedDict()
+            grapg_map5 = collections.OrderedDict()
+            # 查询日表时，数据有16列
+            if q_obj["intv"] == '1d':
+                # print("idx:", idx, '-->record', record)
+                # print("the type of date is :", type(record[0]))
+                user["date"] = record[0].strftime("%Y-%m-%d")
+                user["retention_user"] = int(record[1])
+                user["one"] = int(record[2])
+                user["two"] = int(record[3])
+                user["three"] = int(record[4])
+                user["four"] = int(record[5])
+                user["five"] = int(record[6])
+                user["six"] = int(record[7])
+                user["seven"] = int(record[8])
+                user_rate["date"] = record[0].strftime("%Y-%m-%d")
+                user_rate["retention_user"] = int(record[1])
+                user_rate["one_rate"] = transfer(record[9])
+                user_rate["two_rate"] = transfer(record[10])
+                user_rate["three_rate"] = transfer(record[11])
+                user_rate["four_rate"] = transfer(record[12])
+                user_rate["five_rate"] = transfer(record[13])
+                user_rate["six_rate"] = transfer(record[14])
+                user_rate["seven_rate"] = transfer(record[15])
 
+                if q_obj["retention_var"] == 'retention_user':
 
+                    table_result.append(user)
+                elif q_obj["retention_var"] == 'retention_rate':
 
+                    table_result.append(user_rate)
 
-            # print("record_tmp:", record_map)
+                grapg_map1["date"] = record[0].strftime("%Y-%m-%d")
+                grapg_map1["rate"] = transfer(record[9])
+                gragh_1.append(grapg_map1)
 
-        # col_name =[q_obj['dim'],'total_amount']
-        # result = pd.DataFrame(list(record_list),columns= col_name)
-        # result['show_date'] = result['show_date'].apply((lambda x: x.strftime("%Y-%m-%d")))
+                grapg_map3["date"] = record[0].strftime("%Y-%m-%d")
+                grapg_map3["rate"] = transfer(record[11])
+                gragh_3.append(grapg_map3)
+
+                grapg_map5["date"] = record[0].strftime("%Y-%m-%d")
+                grapg_map5["rate"] = transfer(record[13])
+                gragh_5.append(grapg_map5)
+            # 筛选维度是周或者月时，数据有18列
+            else:
+
+                user["date"] = record[0].strftime("%Y-%m-%d")
+                user["retention_user"] = int(record[1])
+                user["one"] = int(record[2])
+                user["two"] = int(record[3])
+                user["three"] = int(record[4])
+                user["four"] = int(record[5])
+                user["five"] = int(record[6])
+                user["six"] = int(record[7])
+                user["seven"] = int(record[8])
+                user["eight"] = int(record[9])
+                user_rate["date"] = record[0].strftime("%Y-%m-%d")
+                user_rate["retention_user"] = int(record[1])
+                user_rate["one_rate"] = transfer(record[10])
+                user_rate["two_rate"] = transfer(record[11])
+                user_rate["three_rate"] = transfer(record[12])
+                user_rate["four_rate"] = transfer(record[13])
+                user_rate["five_rate"] = transfer(record[14])
+                user_rate["six_rate"] = transfer(record[15])
+                user_rate["seven_rate"] = transfer(record[16])
+                user_rate["eight_rate"] = transfer(record[17])
+
+                if q_obj["retention_var"] == 'retention_user':
+
+                    table_result.append(user)
+                elif q_obj["retention_var"] == 'retention_rate':
+                    table_result.append(user_rate)
+                grapg_map1["date"] = record[0].strftime("%Y-%m-%d")
+                grapg_map1["rate"] = transfer(record[9])
+                gragh_1.append(grapg_map1)
+
+                grapg_map3["date"] = record[0].strftime("%Y-%m-%d")
+                grapg_map3["rate"] = transfer(record[12])
+                gragh_3.append(grapg_map3)
+
+                grapg_map5["date"] = record[0].strftime("%Y-%m-%d")
+                grapg_map5["rate"] = transfer(record[14])
+                gragh_5.append(grapg_map5)
+    result = {"table_result": table_result,
+              "graph_result": {
+                  "graph1": gragh_1,
+                  "graph3": gragh_3,
+                  "graph5": gragh_5
+              }}
     return jsonify(result)

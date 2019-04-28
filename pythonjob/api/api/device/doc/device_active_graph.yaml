@@ -30,7 +30,7 @@ parameters:
    - name: condition
      in: query
      type: string
-     description: 选取查询的字段为key，条件为数值（超过一个以数组表达）。json string 格式：  {"dev_type":["mac","win"],"app_version":["9.0.1.0","10.0"]}
+     description: 选取查询的字段为key，条件为数值（超过一个以数组表达）。json string 格式：  {"dev_type":["filmora_mac","filmora_win"],"app_version":["9.0.1.0","10.0"]}
    - name: size
      in: query
      type: int

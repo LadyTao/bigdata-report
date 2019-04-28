@@ -17,9 +17,9 @@ parameters:
    - name: dim
      in: query
      type: string
-     default: dev_type
+     default: stat_date
      required: true
-     description: 对比维度 ,可选参数:app_version,dev_type,stat_date
+     description: 对比维度 ,可选参数:stat_date
    - name: intv
      in: query
      type: string
@@ -32,12 +32,12 @@ parameters:
      type: string
      required: true
      enum: [retention_user,retention_rate]
-     default: 1d
-     description: 留存指标，可选留存数,留存率
+     default: retention_user
+     description: 留存指标可选：留存数(retention_user),留存率(retention_rate)
    - name: condition
      in: query
      type: string
-     description: 选取查询的字段为key，条件为数值（超过一个以数组表达）。json string 格式：  {"dev_type":["mac","win"],"app_version":["9.0.1.0","10.0"]}
+     description: 选取查询的字段为key，条件为数值（超过一个以数组表达）。json string 格式：  {"dev_type":["filmora_mac","filmora_win"],"app_version":["9.0.1.0","10.0"]}
    - name: size
      in: query
      type: int
