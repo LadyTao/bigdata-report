@@ -391,15 +391,16 @@ def device_total():
 
     sql_str = """
          SELECT
+         stat_date,
         __DIM__ ,
         sum( total_amount ) 
         FROM  device_total_day
-        where 	total_amount>10
+        where 	stat_date  BETWEEN '__START__' AND '__END__' 
         __CONDITIONS__ 
-        GROUP BY __DIM__ HAVING sum( total_amount )  >100 ;
+        GROUP BY stat_date, __DIM__ HAVING sum( total_amount )  >100 ;
     """
     sql = gen_sql(sql=sql_str, q_obj=q_obj)
-    # print("total sql:", sql)
+    print("total sql:", sql)
 
     host = settings.device_host
     port = settings.device_port
@@ -416,11 +417,11 @@ def device_total():
         # print("sql_query in get data:", sql)
         cursor.execute(sql)
         record_list = cursor.fetchall()
-        # print(record_list)
+        print("record_list:", record_list)
 
         result = []
         for idx, record in enumerate(record_list):
-            # print("idx:", idx, '-->record', record)
+            print("idx:", idx, '-->record', record)
             record_map = {}
 
             record_map[q_obj['dim']] = record[0]
@@ -575,13 +576,13 @@ def device_rention_table():
                 user["seven"] = int(record[8])
                 user_rate["date"] = record[0].strftime("%Y-%m-%d")
                 user_rate["retention_user"] = int(record[1])
-                user_rate["one_rate"] = transfer(record[9])
-                user_rate["two_rate"] = transfer(record[10])
-                user_rate["three_rate"] = transfer(record[11])
-                user_rate["four_rate"] = transfer(record[12])
-                user_rate["five_rate"] = transfer(record[13])
-                user_rate["six_rate"] = transfer(record[14])
-                user_rate["seven_rate"] = transfer(record[15])
+                user_rate["one"] = transfer(record[9])
+                user_rate["two"] = transfer(record[10])
+                user_rate["three"] = transfer(record[11])
+                user_rate["four"] = transfer(record[12])
+                user_rate["five"] = transfer(record[13])
+                user_rate["six"] = transfer(record[14])
+                user_rate["seven"] = transfer(record[15])
 
                 if q_obj["retention_var"] == 'retention_user':
 
@@ -616,14 +617,14 @@ def device_rention_table():
                 user["eight"] = int(record[9])
                 user_rate["date"] = record[0].strftime("%Y-%m-%d")
                 user_rate["retention_user"] = int(record[1])
-                user_rate["one_rate"] = transfer(record[10])
-                user_rate["two_rate"] = transfer(record[11])
-                user_rate["three_rate"] = transfer(record[12])
-                user_rate["four_rate"] = transfer(record[13])
-                user_rate["five_rate"] = transfer(record[14])
-                user_rate["six_rate"] = transfer(record[15])
-                user_rate["seven_rate"] = transfer(record[16])
-                user_rate["eight_rate"] = transfer(record[17])
+                user_rate["one"] = transfer(record[10])
+                user_rate["two"] = transfer(record[11])
+                user_rate["three"] = transfer(record[12])
+                user_rate["four"] = transfer(record[13])
+                user_rate["five"] = transfer(record[14])
+                user_rate["six"] = transfer(record[15])
+                user_rate["seven"] = transfer(record[16])
+                user_rate["eight"] = transfer(record[17])
 
                 if q_obj["retention_var"] == 'retention_user':
 
