@@ -56,7 +56,9 @@ _, level = channel_options.ci_channel_info(host=channel_host, port=channel_port,
                                            db=channel_db)
 option["channel"] = level
 options = option
-print("options:", options)
+
+
+# print("options:", options)
 
 
 def parse_query_obj(q_obj):
@@ -213,7 +215,7 @@ def get_dim_statistics_list(response):
                 dim_matrix_map[bucket['dim']][key] += bucket[key]
 
     sorted_dim_matrix_map = collections.OrderedDict(
-        sorted(dim_matrix_map.items(),reverse=True))
+        sorted(dim_matrix_map.items(), reverse=True))
 
     dim_matric_list = []
     for dim, matrics_map in sorted_dim_matrix_map.items():
@@ -274,6 +276,16 @@ def ci_sales_table():
     paged_list = []
     start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
                          q_obj['page']
+
+    if q_obj['dim'] == 'inputtime':
+        dim_statistics_list = sorted(dim_statistics_list, key=lambda k: k['dim'], reverse=True)
+
+    else:
+        dim_statistics_list = sorted(dim_statistics_list, key=lambda k: k['user_counts'], reverse=True)
+
+
+    print("dim_statistics_list:", dim_statistics_list)
+
     for idx, dim_statistics in enumerate(dim_statistics_list):
         if start_idx <= idx < end_idx:
             paged_list.append(dim_statistics)
@@ -293,10 +305,11 @@ def ci_sales_csv():
     sql_query = sql_query.replace("group by intv,", "group by ")
     date_histograms = query_ci_data(sql_query, q_obj)
     dim_statistics_list = get_dim_statistics_list(date_histograms)
-    print("q_obj:",q_obj)
+    print("q_obj:", q_obj)
 
     def dict_to_str(dim, dim_statistics_list):
-        field_mapping = {"show_week":"时间","show_month":"时间","show_date":"时间","channel": "渠道", "productline": "产品线",
+        field_mapping = {"show_week": "时间", "show_month": "时间", "show_date": "时间", "channel": "渠道",
+                         "productline": "产品线",
                          "subscribe_type": "订阅类型", "member_class": "会员等级",
                          "os_platform": "操作系统", "payment_pattern": "支付方式"}
         import codecs
@@ -381,5 +394,5 @@ def board_notes():
         cursor.execute(query)
         record_list = cursor.fetchall()
         result = eval(record_list[0]["note_info"])
-        #print("tyep of result:",type(result))
+        # print("tyep of result:",type(result))
     return jsonify(result)
