@@ -277,14 +277,14 @@ def ci_sales_table():
     start_idx, end_idx = q_obj['size'] * (q_obj['page'] - 1), q_obj['size'] * \
                          q_obj['page']
 
-    if q_obj['dim'] == 'inputtime':
+    # print("before sortting the dim_statistics_list:", dim_statistics_list)
+    if q_obj['dim'] in ["show_date", "show_week", "show_month"]:
         dim_statistics_list = sorted(dim_statistics_list, key=lambda k: k['dim'], reverse=True)
-
     else:
         dim_statistics_list = sorted(dim_statistics_list, key=lambda k: k['user_counts'], reverse=True)
-
-
-    print("dim_statistics_list:", dim_statistics_list)
+    #
+    # print("sorted the dim_statistics_list:", dim_statistics_list)
+    # print("the dim:", q_obj['dim'])
 
     for idx, dim_statistics in enumerate(dim_statistics_list):
         if start_idx <= idx < end_idx:
