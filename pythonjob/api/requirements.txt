@@ -17,7 +17,7 @@ Flask-Cors==3.0.6
 Flask-RESTful==0.3.6
 Flask-Session==0.3.1
 future==0.16.0
-httpie==1.0.0
+httpie==1.0.3
 idna==2.7
 ipaddress==1.0.22
 ipykernel==5.0.0
